@@ -24,6 +24,7 @@ import org.apache.crail.metadata.DataNodeInfo;
 public class NameNodeBlockInfo extends BlockInfo {
 	private BlockInfo region;
 	private long offset;
+	private AbstractNode node;
 	
 	public NameNodeBlockInfo(BlockInfo region, long offset, int length){
 		this.region = region;
@@ -33,7 +34,9 @@ public class NameNodeBlockInfo extends BlockInfo {
 		this.dnInfo = this.getDnInfo();
 		this.lba = this.getLba();
 		this.addr = this.getAddr();
-		this.lkey = this.getLkey();		
+		this.lkey = this.getLkey();
+
+		this.node = null;
 	}	
 
 	@Override
@@ -58,6 +61,14 @@ public class NameNodeBlockInfo extends BlockInfo {
 
 	public BlockInfo getRegion() {
 		return region;
+	}
+
+	public AbstractNode getNode() {
+		return this.node;
+	}
+
+	public void setNode(AbstractNode node) {
+		this.node = node;
 	}
 	
 }

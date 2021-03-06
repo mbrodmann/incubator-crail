@@ -63,6 +63,7 @@ public class FileBlocks extends AbstractNode {
 		try {
 			if (index == blocks.size()){
 				blocks.add(index, block);
+				block.setNode(this);
 				return true;
 			} else {
 				return false;
@@ -79,8 +80,20 @@ public class FileBlocks extends AbstractNode {
 			Iterator<NameNodeBlockInfo> iter = blocks.iterator();
 			while (iter.hasNext()){
 				NameNodeBlockInfo blockInfo = iter.next();
+				blockInfo.setNode(null);
 				blockStore.addBlock(blockInfo);
 			}	
+		} finally {
+			readLock.unlock();
+		}
+	}
+
+	@Override
+	public void replaceBlock(NameNodeBlockInfo old, NameNodeBlockInfo fresh) throws Exception {
+		readLock.lock();
+		try {
+			int index = blocks.indexOf(old);
+			blocks.set(index, fresh);
 		} finally {
 			readLock.unlock();
 		}

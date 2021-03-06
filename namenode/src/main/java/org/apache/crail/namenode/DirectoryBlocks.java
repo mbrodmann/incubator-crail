@@ -19,6 +19,8 @@
 package org.apache.crail.namenode;
 
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -66,6 +68,7 @@ public class DirectoryBlocks extends AbstractNode {
 	@Override
 	public boolean addBlock(int index, NameNodeBlockInfo block) {
 		BlockInfo old = blocks.putIfAbsent(index, block);
+		block.setNode(this);
 		return old == null;
 	}
 
@@ -74,8 +77,20 @@ public class DirectoryBlocks extends AbstractNode {
 		Iterator<NameNodeBlockInfo> iter = blocks.values().iterator();
 		while (iter.hasNext()){
 			NameNodeBlockInfo blockInfo = iter.next();
+			blockInfo.setNode(null);
 			blockStore.addBlock(blockInfo);
 		}	
+	}
+
+	@Override
+	public void replaceBlock(NameNodeBlockInfo old, NameNodeBlockInfo fresh) throws Exception {
+
+		for (Map.Entry<Integer, NameNodeBlockInfo> entry : blocks.entrySet()) {
+			if (Objects.equals(old, entry.getValue())) {
+				blocks.replace(entry.getKey(), fresh);
+			}
+		}
+
 	}
 
 	@Override

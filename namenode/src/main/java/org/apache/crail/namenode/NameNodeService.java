@@ -20,13 +20,19 @@ package org.apache.crail.namenode;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.crail.CrailBuffer;
 import org.apache.crail.CrailNodeType;
+import org.apache.crail.CrailStore;
+import org.apache.crail.conf.CrailConfiguration;
 import org.apache.crail.conf.CrailConstants;
+import org.apache.crail.core.CoreDataStore;
+import org.apache.crail.memory.BufferCache;
 import org.apache.crail.metadata.*;
 import org.apache.crail.rpc.RpcErrors;
 import org.apache.crail.rpc.RpcNameNodeService;
@@ -34,6 +40,9 @@ import org.apache.crail.rpc.RpcNameNodeState;
 import org.apache.crail.rpc.RpcProtocol;
 import org.apache.crail.rpc.RpcRequestMessage;
 import org.apache.crail.rpc.RpcResponseMessage;
+import org.apache.crail.storage.StorageClient;
+import org.apache.crail.storage.StorageEndpoint;
+import org.apache.crail.storage.StorageFuture;
 import org.apache.crail.utils.CrailUtils;
 import org.slf4j.Logger;
 
@@ -418,6 +427,74 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				response.setServiceId(serviceId);
 				response.setStatus(DataNodeStatus.STATUS_DATANODE_STOP);
 				return RpcErrors.ERR_OK;
+			} else {
+				// experimental: when datanode is marked and still stores data, try to redistribute the blocks
+				LOG.info("Datanode " + dnInfo + " still stores " + dnInfoNn.getNumberOfUsedBlocks() + " blocks");
+
+				for(NameNodeBlockInfo blockInfo: dnInfoNn.involvedFiles()) {
+
+					AbstractNode affectedFile = blockInfo.getNode();
+					LOG.info("Affected file " + affectedFile);
+
+					// Steps:
+					// 1) Allocate new block
+					// 2) Write data to new block
+					// 3) Update AbstractNode to point to new block
+					// 4) Clients should now try to retrieve the new block when sending request to the namenode ==> shutdown datanode
+
+					// 1) Allocate new block
+					NameNodeBlockInfo targetBlock = blockStore.getBlock(0,0);
+
+					// 2) Write data to new block
+					// 2.1) Transfer data from old block into local buffer
+					CrailConfiguration conf = CrailConfiguration.createConfigurationFromFile();
+					CoreDataStore store = (CoreDataStore) CrailStore.newInstance(conf);
+					StorageClient datanode = StorageClient.createInstance("org.apache.crail.storage.tcp.TcpStorageTier");
+					BufferCache bufferCache = BufferCache.createInstance(CrailConstants.CACHE_IMPL);
+					datanode.init(store.getStatistics(), bufferCache, conf, null);
+
+
+					StorageEndpoint endpoint = datanode.createEndpoint(dnInfo);
+
+					CrailBuffer buffer = store.allocateBuffer();
+					buffer.clear();
+					buffer.limit(buffer.position() + blockInfo.getLength());
+					StorageFuture future = endpoint.read(buffer, blockInfo,0);
+					future.get();
+
+					endpoint.close();
+
+					// Debug print buffer
+					/*
+					ByteBuffer result = buffer.getByteBuffer();
+					result.flip(); // flip the buffer for reading
+					byte[] bytes = new byte[result.remaining()]; // create a byte array the length of the number of bytes written to the buffer
+					result.get(bytes); // read the bytes that were written
+					String packet = new String(bytes);
+					System.out.println(packet);
+                    */
+
+					// 2.2) write data to freshly allocated block
+					DataNodeInfo target = targetBlock.getDnInfo();
+					StorageEndpoint targetEndpoint = datanode.createEndpoint(target);
+
+					buffer.flip();
+					buffer.limit((int) affectedFile.getCapacity());
+
+					StorageFuture writeFuture = targetEndpoint.write(buffer, targetBlock, 0);
+					writeFuture.get();
+
+					targetEndpoint.close();
+
+					// 3) Update AbstractNode to point to new block
+					affectedFile.replaceBlock(blockInfo, targetBlock);
+				}
+
+				// 4) Clients should now try to retrieve the new block when sending request to the namenode ==> shutdown datanode
+				dnInfoNn.freeAllBlocks();
+
+				System.out.println("TODO ...");
+
 			}
 		}
 

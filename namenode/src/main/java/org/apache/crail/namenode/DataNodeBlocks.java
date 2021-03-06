@@ -19,6 +19,7 @@
 package org.apache.crail.namenode;
 
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +36,7 @@ public class DataNodeBlocks extends DataNodeInfo {
 	
 	private ConcurrentHashMap<Long, BlockInfo> regions;
 	private LinkedBlockingQueue<NameNodeBlockInfo> freeBlocks;
+	private LinkedBlockingQueue<NameNodeBlockInfo> usedBlocks;
 	private long token;
 	private long maxBlockCount;
 	private boolean scheduleForRemoval;
@@ -48,6 +50,7 @@ public class DataNodeBlocks extends DataNodeInfo {
 		super(storageType, getStorageClass, locationClass, ipAddress, port);
 		this.regions = new ConcurrentHashMap<Long, BlockInfo>();
 		this.freeBlocks = new LinkedBlockingQueue<NameNodeBlockInfo>();
+		this.usedBlocks = new LinkedBlockingQueue<NameNodeBlockInfo>();
 		this.scheduleForRemoval = false;
 		this.maxBlockCount = 0;
 	}
@@ -57,20 +60,30 @@ public class DataNodeBlocks extends DataNodeInfo {
 		// When a datanode connects for the first time to the namenode, all of the offered storage capacities
 		// are added in the form of free blocks. By keeping track of this number (which grows block for block), we
 		// learn the maximum available capacity in this datanode. Only when the number of free blocks equals the number
+
 		// of all blocks, the datanode is safe to be removed.
 		if(freeBlocks.size() > this.maxBlockCount) {
 			this.maxBlockCount = freeBlocks.size();
 		}
 	}
 	
+
 	public void addFreeBlock(NameNodeBlockInfo nnBlock) {
 		regions.put(nnBlock.getRegion().getLba(), nnBlock.getRegion());
 		freeBlocks.add(nnBlock);
+		usedBlocks.remove(nnBlock);
 		updateBlockCount();
+	}
+
+	public void freeAllBlocks() {
+		for(NameNodeBlockInfo block: usedBlocks) {
+			addFreeBlock(block);
+		}
 	}
 
 	public NameNodeBlockInfo getFreeBlock() throws InterruptedException {
 		NameNodeBlockInfo block = this.freeBlocks.poll();
+		usedBlocks.add(block);
 		return block;
 	}
 
@@ -88,6 +101,20 @@ public class DataNodeBlocks extends DataNodeInfo {
 
 	public long getTotalNumberOfBlocks() {
 		return this.maxBlockCount;
+	}
+
+	public int getNumberOfUsedBlocks() {
+		return this.usedBlocks.size();
+	}
+
+	public LinkedBlockingQueue<NameNodeBlockInfo> involvedFiles() {
+		LinkedBlockingQueue<NameNodeBlockInfo> res = new LinkedBlockingQueue();
+
+		for(NameNodeBlockInfo e: usedBlocks) {
+			res.add(e);
+		}
+
+		return res;
 	}
 
 	public int getBlockCount() {
