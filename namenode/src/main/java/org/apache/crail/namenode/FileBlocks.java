@@ -58,6 +58,11 @@ public class FileBlocks extends AbstractNode {
 	}
 
 	@Override
+	public boolean isLast(NameNodeBlockInfo block) throws Exception {
+		return (blocks.indexOf(block) == (blocks.size()-1));
+	}
+
+	@Override
 	public boolean addBlock(int index, NameNodeBlockInfo block) {
 		writeLock.lock();
 		try {

@@ -19,6 +19,7 @@
 package org.apache.crail.namenode;
 
 import java.net.UnknownHostException;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -107,8 +108,8 @@ public class DataNodeBlocks extends DataNodeInfo {
 		return this.usedBlocks.size();
 	}
 
-	public LinkedBlockingQueue<NameNodeBlockInfo> involvedFiles() {
-		LinkedBlockingQueue<NameNodeBlockInfo> res = new LinkedBlockingQueue();
+	public LinkedList<NameNodeBlockInfo> involvedFiles() {
+		LinkedList<NameNodeBlockInfo> res = new LinkedList<>();
 
 		for(NameNodeBlockInfo e: usedBlocks) {
 			res.add(e);

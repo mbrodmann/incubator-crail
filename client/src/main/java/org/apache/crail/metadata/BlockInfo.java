@@ -28,7 +28,9 @@ public class BlockInfo {
 	protected long lba;
 	protected long addr;
 	protected int length;
-	protected int lkey;	
+	protected int lkey;
+
+	private int limit = 0;
 	
 	public BlockInfo(){
 		this.dnInfo = new DataNodeInfo();
@@ -90,6 +92,14 @@ public class BlockInfo {
 
 	public DataNodeInfo getDnInfo() {
 		return dnInfo;
+	}
+
+	public int getLimit() {
+		return this.limit;
+	}
+
+	public void setLimit(int limit) {
+		this.limit = limit;
 	}
 
 	@Override

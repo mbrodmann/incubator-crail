@@ -21,9 +21,11 @@ package org.apache.crail.namenode;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.crail.CrailBuffer;
@@ -431,10 +433,11 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				// experimental: when datanode is marked and still stores data, try to redistribute the blocks
 				LOG.info("Datanode " + dnInfo + " still stores " + dnInfoNn.getNumberOfUsedBlocks() + " blocks");
 
-				for(NameNodeBlockInfo blockInfo: dnInfoNn.involvedFiles()) {
+
+				LinkedList<NameNodeBlockInfo> involvedFiles = dnInfoNn.involvedFiles();
+				for(NameNodeBlockInfo blockInfo: involvedFiles) {
 
 					AbstractNode affectedFile = blockInfo.getNode();
-					LOG.info("Affected file " + affectedFile);
 
 					// Steps:
 					// 1) Allocate new block
@@ -446,8 +449,17 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 					NameNodeBlockInfo targetBlock = blockStore.getBlock(0,0);
 
 					// 2) Write data to new block
-					// 2.1) Transfer data from old block into local buffer
 					CrailConfiguration conf = CrailConfiguration.createConfigurationFromFile();
+					int blocksize = Integer.parseInt(conf.get("crail.blocksize"));
+					int limit;
+
+					if(affectedFile.isLast(blockInfo)) {
+						limit = (int) (affectedFile.getCapacity() % blocksize);
+					} else {
+						limit = Math.min(blocksize, (int) affectedFile.getCapacity());
+					}
+
+					// 2.1) Transfer data from old block into local buffer
 					CoreDataStore store = (CoreDataStore) CrailStore.newInstance(conf);
 					StorageClient datanode = StorageClient.createInstance("org.apache.crail.storage.tcp.TcpStorageTier");
 					BufferCache bufferCache = BufferCache.createInstance(CrailConstants.CACHE_IMPL);
@@ -458,7 +470,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 					CrailBuffer buffer = store.allocateBuffer();
 					buffer.clear();
-					buffer.limit(buffer.position() + blockInfo.getLength());
+					buffer.limit(buffer.position() + limit);
 					StorageFuture future = endpoint.read(buffer, blockInfo,0);
 					future.get();
 
@@ -479,7 +491,13 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 					StorageEndpoint targetEndpoint = datanode.createEndpoint(target);
 
 					buffer.flip();
-					buffer.limit((int) affectedFile.getCapacity());
+
+					// overflows for multi-block files
+					// buffer.limit((int) affectedFile.getCapacity());
+
+					System.out.println("Limit: " + limit);
+
+					buffer.limit(buffer.position() + limit);
 
 					StorageFuture writeFuture = targetEndpoint.write(buffer, targetBlock, 0);
 					writeFuture.get();

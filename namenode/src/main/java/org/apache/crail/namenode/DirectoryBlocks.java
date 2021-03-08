@@ -59,7 +59,13 @@ public class DirectoryBlocks extends AbstractNode {
 	public AbstractNode removeChild(int component) {
 		return children.remove(component);
 	}
-	
+
+	@Override
+	public boolean isLast(NameNodeBlockInfo block) throws Exception {
+		// TODO implement
+		return false;
+	}
+
 	@Override
 	public NameNodeBlockInfo getBlock(int index) {
 		return blocks.get(index);

@@ -230,7 +230,12 @@ public abstract class CoreStream {
 			StorageEndpoint endpoint = endpointCache.getDataEndpoint(block.getDnInfo());
 			dataBuf.clear();
 			dataBuf.position(opDesc.getBufferPosition());
-			dataBuf.limit(dataBuf.position() + opDesc.getLen());
+
+			// TODO: there is probably a much better way of figuring this out ...
+			int limit = dataBuf.position() + opDesc.getLen();
+			block.setLimit(limit);
+			dataBuf.limit(limit);
+
 			StorageFuture subFuture = trigger(endpoint, opDesc, dataBuf, block);
 			incStats(endpoint.isLocal());
 			return subFuture;
