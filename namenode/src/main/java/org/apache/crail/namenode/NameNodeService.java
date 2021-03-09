@@ -446,7 +446,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 					// 4) Clients should now try to retrieve the new block when sending request to the namenode ==> shutdown datanode
 
 					// 1) Allocate new block
-					NameNodeBlockInfo targetBlock = blockStore.getBlock(0,0);
+					NameNodeBlockInfo targetBlock = blockStore.getBlock(blockInfo.getDnInfo().getStorageClass(),0);
 
 					// 2) Write data to new block
 					CrailConfiguration conf = CrailConfiguration.createConfigurationFromFile();
@@ -461,7 +461,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 					// 2.1) Transfer data from old block into local buffer
 					CoreDataStore store = (CoreDataStore) CrailStore.newInstance(conf);
-					StorageClient datanode = StorageClient.createInstance("org.apache.crail.storage.tcp.TcpStorageTier");
+					StorageClient datanode = StorageClient.createInstance(conf.get("crail.storage.types"));
+					
 					BufferCache bufferCache = BufferCache.createInstance(CrailConstants.CACHE_IMPL);
 					datanode.init(store.getStatistics(), bufferCache, conf, null);
 
