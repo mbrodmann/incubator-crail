@@ -60,6 +60,10 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 	private FileStore fileTree;
 	private ConcurrentHashMap<Long, AbstractNode> fileTable;	
 	private GCServer gcServer;
+
+	// WIP: block transfer related objects
+	private CrailConfiguration conf = CrailConfiguration.createConfigurationFromFile();
+	private BufferCache bufferCache;
 	
 	public NameNodeService() throws IOException {
 		URI uri = URI.create(CrailConstants.NAMENODE_ADDRESS);
@@ -77,7 +81,15 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		AbstractNode root = fileTree.getRoot();
 		fileTable.put(root.getFd(), root);
 		Thread gc = new Thread(gcServer);
-		gc.start();				
+		gc.start();
+		
+		// WIP: block transfer related objects
+		try {
+			this.bufferCache = BufferCache.createInstance(CrailConstants.CACHE_IMPL);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		
 	}
 	
 	public long getNextId(){
@@ -439,6 +451,10 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 					AbstractNode affectedFile = blockInfo.getNode();
 
+					if(affectedFile == null) {
+						continue;
+					}
+
 					// Steps:
 					// 1) Allocate new block
 					// 2) Write data to new block
@@ -449,24 +465,24 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 					NameNodeBlockInfo targetBlock = blockStore.getBlock(blockInfo.getDnInfo().getStorageClass(),0);
 
 					// 2) Write data to new block
-					CrailConfiguration conf = CrailConfiguration.createConfigurationFromFile();
 					int blocksize = Integer.parseInt(conf.get("crail.blocksize"));
 					int limit;
+					
 
 					if(affectedFile.isLast(blockInfo)) {
 						limit = (int) (affectedFile.getCapacity() % blocksize);
 					} else {
 						limit = Math.min(blocksize, (int) affectedFile.getCapacity());
 					}
+					 
+					if(limit == 0) {
+						continue;
+					}
 
 					// 2.1) Transfer data from old block into local buffer
 					CoreDataStore store = (CoreDataStore) CrailStore.newInstance(conf);
 					StorageClient datanode = StorageClient.createInstance(conf.get("crail.storage.types"));
-					
-					BufferCache bufferCache = BufferCache.createInstance(CrailConstants.CACHE_IMPL);
-					datanode.init(store.getStatistics(), bufferCache, conf, null);
-
-
+					datanode.init(store.getStatistics(), this.bufferCache, conf, null);
 					StorageEndpoint endpoint = datanode.createEndpoint(dnInfo);
 
 					CrailBuffer buffer = store.allocateBuffer();

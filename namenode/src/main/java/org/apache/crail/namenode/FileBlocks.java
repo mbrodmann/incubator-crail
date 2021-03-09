@@ -98,7 +98,9 @@ public class FileBlocks extends AbstractNode {
 		readLock.lock();
 		try {
 			int index = blocks.indexOf(old);
-			blocks.set(index, fresh);
+			if(index != -1) {
+				blocks.set(index, fresh);
+			}
 		} finally {
 			readLock.unlock();
 		}

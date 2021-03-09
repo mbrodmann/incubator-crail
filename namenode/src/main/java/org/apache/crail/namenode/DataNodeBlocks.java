@@ -84,7 +84,11 @@ public class DataNodeBlocks extends DataNodeInfo {
 
 	public NameNodeBlockInfo getFreeBlock() throws InterruptedException {
 		NameNodeBlockInfo block = this.freeBlocks.poll();
-		usedBlocks.add(block);
+
+		if(block != null) {
+			usedBlocks.add(block);
+		}
+		
 		return block;
 	}
 
