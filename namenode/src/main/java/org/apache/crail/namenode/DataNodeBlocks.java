@@ -19,6 +19,7 @@
 package org.apache.crail.namenode;
 
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,9 +36,9 @@ import org.slf4j.Logger;
 public class DataNodeBlocks extends DataNodeInfo {
 	private static final Logger LOG = CrailUtils.getLogger();
 	
-	private ConcurrentHashMap<Long, BlockInfo> regions;
+	private ConcurrentHashMap<Long,BlockInfo> regions;
 	private LinkedBlockingQueue<NameNodeBlockInfo> freeBlocks;
-	private LinkedBlockingQueue<NameNodeBlockInfo> usedBlocks;
+	private HashMap<Long,NameNodeBlockInfo> usedBlocks;
 	private long token;
 	private long maxBlockCount;
 	private boolean scheduleForRemoval;
@@ -51,7 +52,7 @@ public class DataNodeBlocks extends DataNodeInfo {
 		super(storageType, getStorageClass, locationClass, ipAddress, port);
 		this.regions = new ConcurrentHashMap<Long, BlockInfo>();
 		this.freeBlocks = new LinkedBlockingQueue<NameNodeBlockInfo>();
-		this.usedBlocks = new LinkedBlockingQueue<NameNodeBlockInfo>();
+		this.usedBlocks = new HashMap<Long,NameNodeBlockInfo>();
 		this.scheduleForRemoval = false;
 		this.maxBlockCount = 0;
 	}
@@ -72,12 +73,12 @@ public class DataNodeBlocks extends DataNodeInfo {
 	public void addFreeBlock(NameNodeBlockInfo nnBlock) {
 		regions.put(nnBlock.getRegion().getLba(), nnBlock.getRegion());
 		freeBlocks.add(nnBlock);
-		usedBlocks.remove(nnBlock);
+		usedBlocks.remove(nnBlock.getAddr());
 		updateBlockCount();
 	}
 
 	public void freeAllBlocks() {
-		for(NameNodeBlockInfo block: usedBlocks) {
+		for(NameNodeBlockInfo block: usedBlocks.values()) {
 			addFreeBlock(block);
 		}
 	}
@@ -86,7 +87,7 @@ public class DataNodeBlocks extends DataNodeInfo {
 		NameNodeBlockInfo block = this.freeBlocks.poll();
 
 		if(block != null) {
-			usedBlocks.add(block);
+			usedBlocks.put(block.getAddr(), block);
 		}
 		
 		return block;
@@ -115,7 +116,7 @@ public class DataNodeBlocks extends DataNodeInfo {
 	public LinkedList<NameNodeBlockInfo> involvedFiles() {
 		LinkedList<NameNodeBlockInfo> res = new LinkedList<>();
 
-		for(NameNodeBlockInfo e: usedBlocks) {
+		for(NameNodeBlockInfo e: usedBlocks.values()) {
 			res.add(e);
 		}
 
