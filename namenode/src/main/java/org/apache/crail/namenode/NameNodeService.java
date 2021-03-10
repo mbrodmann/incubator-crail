@@ -62,6 +62,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 	private GCServer gcServer;
 
 	// WIP: block transfer related objects
+	private CoreDataStore store = null;
+	private StorageClient datanode = null;
 	private CrailConfiguration conf = CrailConfiguration.createConfigurationFromFile();
 	private BufferCache bufferCache;
 	
@@ -91,7 +93,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		}
 		
 	}
-	
+
 	public long getNextId(){
 		return sequenceId.getAndAdd(serviceSize);
 	}
@@ -442,6 +444,17 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				response.setStatus(DataNodeStatus.STATUS_DATANODE_STOP);
 				return RpcErrors.ERR_OK;
 			} else {
+
+				// WIP initialize objects if not done already
+				if(this.store == null) {
+					this.store = (CoreDataStore) CrailStore.newInstance(conf);
+				}
+
+				if(this.datanode == null) {
+					this.datanode = StorageClient.createInstance(conf.get("crail.storage.types"));
+					this.datanode.init(store.getStatistics(), this.bufferCache, conf, null);
+				}
+
 				// experimental: when datanode is marked and still stores data, try to redistribute the blocks
 				LOG.info("Datanode " + dnInfo + " still stores " + dnInfoNn.getNumberOfUsedBlocks() + " blocks");
 
@@ -480,9 +493,6 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 					}
 
 					// 2.1) Transfer data from old block into local buffer
-					CoreDataStore store = (CoreDataStore) CrailStore.newInstance(conf);
-					StorageClient datanode = StorageClient.createInstance(conf.get("crail.storage.types"));
-					datanode.init(store.getStatistics(), this.bufferCache, conf, null);
 					StorageEndpoint endpoint = datanode.createEndpoint(dnInfo);
 
 					CrailBuffer buffer = store.allocateBuffer();
