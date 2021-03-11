@@ -629,7 +629,7 @@ public class CoreDataStore extends CrailStore {
 		return rpcConnection;
 	}
 
-	EndpointCache getDatanodeEndpointCache() {
+	public EndpointCache getDatanodeEndpointCache() {
 		return datanodeEndpointCache;
 	}
 

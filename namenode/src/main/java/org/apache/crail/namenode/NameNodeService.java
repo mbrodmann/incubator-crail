@@ -493,7 +493,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 					}
 
 					// 2.1) Transfer data from old block into local buffer
-					StorageEndpoint endpoint = datanode.createEndpoint(dnInfo);
+					StorageEndpoint endpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(dnInfo);
+					// StorageEndpoint endpoint = datanode.createEndpoint(dnInfo);
 
 					CrailBuffer buffer = store.allocateBuffer();
 					buffer.clear();
@@ -515,7 +516,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 					// 2.2) write data to freshly allocated block
 					DataNodeInfo target = targetBlock.getDnInfo();
-					StorageEndpoint targetEndpoint = datanode.createEndpoint(target);
+					// StorageEndpoint targetEndpoint = datanode.createEndpoint(target);
+					StorageEndpoint targetEndpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(target);
 
 					buffer.flip();
 

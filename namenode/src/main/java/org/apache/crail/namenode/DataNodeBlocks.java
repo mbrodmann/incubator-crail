@@ -78,8 +78,13 @@ public class DataNodeBlocks extends DataNodeInfo {
 	}
 
 	public void freeAllBlocks() {
+		LinkedList<NameNodeBlockInfo> entries = new LinkedList<>();
 		for(NameNodeBlockInfo block: usedBlocks.values()) {
-			addFreeBlock(block);
+			entries.add(block);
+		}
+
+		for(NameNodeBlockInfo entry: entries) {
+			addFreeBlock(entry);
 		}
 	}
 
