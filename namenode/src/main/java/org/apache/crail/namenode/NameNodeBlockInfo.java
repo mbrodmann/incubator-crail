@@ -25,6 +25,8 @@ public class NameNodeBlockInfo extends BlockInfo {
 	private BlockInfo region;
 	private long offset;
 	private AbstractNode node;
+	private static long ids = 0;
+	private long id;
 	
 	public NameNodeBlockInfo(BlockInfo region, long offset, int length){
 		this.region = region;
@@ -37,6 +39,9 @@ public class NameNodeBlockInfo extends BlockInfo {
 		this.lkey = this.getLkey();
 
 		this.node = null;
+		this.id = NameNodeBlockInfo.ids;
+		NameNodeBlockInfo.ids++;
+
 	}	
 
 	@Override
@@ -65,6 +70,10 @@ public class NameNodeBlockInfo extends BlockInfo {
 
 	public AbstractNode getNode() {
 		return this.node;
+	}
+
+	public long getId() {
+		return this.id;
 	}
 
 	public void setNode(AbstractNode node) {

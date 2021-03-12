@@ -445,6 +445,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				return RpcErrors.ERR_OK;
 			} else {
 
+				/*
+
 				// WIP initialize objects if not done already
 				if(this.store == null) {
 					this.store = (CoreDataStore) CrailStore.newInstance(conf);
@@ -505,14 +507,14 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 					endpoint.close();
 
 					// Debug print buffer
-					/*
-					ByteBuffer result = buffer.getByteBuffer();
-					result.flip(); // flip the buffer for reading
-					byte[] bytes = new byte[result.remaining()]; // create a byte array the length of the number of bytes written to the buffer
-					result.get(bytes); // read the bytes that were written
-					String packet = new String(bytes);
-					System.out.println(packet);
-                    */
+					
+					// ByteBuffer result = buffer.getByteBuffer();
+					// result.flip(); // flip the buffer for reading
+					// byte[] bytes = new byte[result.remaining()]; // create a byte array the length of the number of bytes written to the buffer
+					// result.get(bytes); // read the bytes that were written
+					// String packet = new String(bytes);
+					// System.out.println(packet);
+                    
 
 					// 2.2) write data to freshly allocated block
 					DataNodeInfo target = targetBlock.getDnInfo();
@@ -524,7 +526,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 					// overflows for multi-block files
 					// buffer.limit((int) affectedFile.getCapacity());
 
-					System.out.println("Limit: " + limit);
+					// System.out.println("Limit: " + limit);
 
 					buffer.limit(buffer.position() + limit);
 
@@ -541,6 +543,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				dnInfoNn.freeAllBlocks();
 
 				System.out.println("TODO ...");
+
+				*/
 
 			}
 		}
@@ -697,6 +701,109 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 	}
 
 	//------------------------
+
+	public void removeDataNodeCompletely(DataNodeInfo dnInfo) throws Exception {
+
+		// WIP initialize objects if not done already
+		if(this.store == null) {
+			this.store = (CoreDataStore) CrailStore.newInstance(conf);
+		}
+
+		if(this.datanode == null) {
+			this.datanode = StorageClient.createInstance(conf.get("crail.storage.types"));
+			this.datanode.init(store.getStatistics(), this.bufferCache, conf, null);
+		}
+
+		DataNodeBlocks dnInfoNn = blockStore.getDataNode(dnInfo);
+		dnInfoNn.scheduleForRemoval();
+
+		// experimental: when datanode is marked and still stores data, try to redistribute the blocks
+		LOG.info("Datanode " + dnInfo + " still stores " + dnInfoNn.getNumberOfUsedBlocks() + " blocks");
+
+
+		LinkedList<NameNodeBlockInfo> involvedFiles = dnInfoNn.involvedFiles();
+		for(NameNodeBlockInfo blockInfo: involvedFiles) {
+
+			AbstractNode affectedFile = blockInfo.getNode();
+
+			if(affectedFile == null) {
+				continue;
+			}
+
+			// Steps:
+			// 1) Allocate new block
+			// 2) Write data to new block
+			// 3) Update AbstractNode to point to new block
+			// 4) Clients should now try to retrieve the new block when sending request to the namenode ==> shutdown datanode
+
+			// 1) Allocate new block
+			NameNodeBlockInfo targetBlock = blockStore.getBlock(blockInfo.getDnInfo().getStorageClass(),0);
+
+			// 2) Write data to new block
+			int blocksize = Integer.parseInt(conf.get("crail.blocksize"));
+			int limit;
+			
+
+			if(affectedFile.isLast(blockInfo)) {
+				limit = (int) (affectedFile.getCapacity() % blocksize);
+			} else {
+				limit = Math.min(blocksize, (int) affectedFile.getCapacity());
+			}
+			 
+			if(limit == 0) {
+				continue;
+			}
+
+			// 2.1) Transfer data from old block into local buffer
+			StorageEndpoint endpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(dnInfo);
+			// StorageEndpoint endpoint = datanode.createEndpoint(dnInfo);
+
+			CrailBuffer buffer = store.allocateBuffer();
+			buffer.clear();
+			buffer.limit(buffer.position() + limit);
+			StorageFuture future = endpoint.read(buffer, blockInfo,0);
+			future.get();
+
+			endpoint.close();
+
+			// Debug print buffer
+			/*
+			ByteBuffer result = buffer.getByteBuffer();
+			result.flip(); // flip the buffer for reading
+			byte[] bytes = new byte[result.remaining()]; // create a byte array the length of the number of bytes written to the buffer
+			result.get(bytes); // read the bytes that were written
+			String packet = new String(bytes);
+			System.out.println(packet);
+			*/
+
+			// 2.2) write data to freshly allocated block
+			DataNodeInfo target = targetBlock.getDnInfo();
+			// StorageEndpoint targetEndpoint = datanode.createEndpoint(target);
+			StorageEndpoint targetEndpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(target);
+
+			buffer.flip();
+
+			// overflows for multi-block files
+			// buffer.limit((int) affectedFile.getCapacity());
+
+			// System.out.println("Limit: " + limit);
+
+			buffer.limit(buffer.position() + limit);
+
+			StorageFuture writeFuture = targetEndpoint.write(buffer, targetBlock, 0);
+			writeFuture.get();
+
+			targetEndpoint.close();
+
+			// 3) Update AbstractNode to point to new block
+			affectedFile.replaceBlock(blockInfo, targetBlock);
+		}
+
+		// 4) Clients should now try to retrieve the new block when sending request to the namenode ==> shutdown datanode
+		dnInfoNn.freeAllBlocks();
+
+		System.out.println("TODO ...");
+	}
 	
 	@Override
 	public short dump(RpcRequestMessage.DumpNameNodeReq request, RpcResponseMessage.VoidRes response, RpcNameNodeState errorState) throws Exception {

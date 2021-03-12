@@ -196,6 +196,7 @@ public interface StorageServer extends Configurable, Runnable {
 
 	public static void processStatus(StorageServer server, RpcConnection rpc, Thread thread, short status) throws Exception {
 		if (status == DataNodeStatus.STATUS_DATANODE_STOP) {
+			//Thread.sleep(600000);
 			server.prepareToShutDown();
 			rpc.close();
 			

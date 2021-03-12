@@ -53,7 +53,8 @@ public class FreeCapacityPolicy extends PolicyRunner {
                     if (removeCandidate != null) {
                         this.lastCapacity = this.service.getNumberOfBlocks();
                         this.updated = false;
-                        this.service.prepareDataNodeForRemoval(removeCandidate);
+                        // this.service.prepareDataNodeForRemoval(removeCandidate);
+                        this.service.removeDataNodeCompletely(removeCandidate);
                         this.datanodes--;
                     }
                 }
@@ -69,6 +70,7 @@ public class FreeCapacityPolicy extends PolicyRunner {
 
 
         } catch (Exception e) {
+            e.printStackTrace();
             LOG.error("Unable to retrieve storage usage information");
         }
     }

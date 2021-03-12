@@ -10,6 +10,7 @@ public abstract class PolicyRunner implements Runnable {
     static final Logger LOG = CrailUtils.getLogger();
     NameNodeService service;
     int instances = 0;
+    int counter = 0;
 
     PolicyRunner(RpcNameNodeService service){
         this.service = (NameNodeService) service;
@@ -36,7 +37,8 @@ public abstract class PolicyRunner implements Runnable {
     public void launchDatanode() {
 
         try {
-            String port = Integer.toString(50020+this.instances);
+            String port = Integer.toString(50020+this.counter);
+            this.counter++;
             Process p = new ProcessBuilder(System.getenv("CRAIL_HOME") + "/bin/crail", "datanode", "--",  "-p" + port).start();
 
             LOG.info("Launched new datanode instance");
