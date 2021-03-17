@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.crail.conf.CrailConstants;
 import org.apache.crail.storage.StorageFuture;
 import org.apache.crail.storage.StorageResult;
 
@@ -48,6 +49,8 @@ public class RdmaActiveFuture implements StorageFuture, StorageResult {
 	
 	@Override
 	public synchronized StorageResult get() throws InterruptedException, ExecutionException {
+		return get(CrailConstants.RPC_TIMEOUT, TimeUnit.MILLISECONDS);
+		/*
 		if (status.get() == RPC_PENDING){
 			try {
 				wait();
@@ -64,6 +67,7 @@ public class RdmaActiveFuture implements StorageFuture, StorageResult {
 		} else {
 			throw new InterruptedException("RPC error");
 		}
+		*/
 	}
 
 	@Override

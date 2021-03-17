@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -761,10 +762,18 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			CrailBuffer buffer = store.allocateBuffer();
 			buffer.clear();
 			buffer.limit(buffer.position() + limit);
-			StorageFuture future = endpoint.read(buffer, blockInfo,0);
-			future.get();
 
-			endpoint.close();
+			try {
+				StorageFuture future = endpoint.read(buffer, blockInfo,0);
+				future.get();
+				endpoint.close();
+			} catch(Exception e) {
+				// At least for tcp, there seems to remain a few issues with read sizes ...
+				e.printStackTrace();
+			}
+					
+
+			
 
 			// Debug print buffer
 			/*
