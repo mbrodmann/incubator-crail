@@ -86,7 +86,7 @@ public class FileBlocks extends AbstractNode {
 			while (iter.hasNext()){
 				NameNodeBlockInfo blockInfo = iter.next();
 				blockInfo.setNode(null);
-				blockStore.addBlock(blockInfo);
+				blockStore.reAddBlock(blockInfo);
 			}	
 		} finally {
 			readLock.unlock();

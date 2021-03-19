@@ -446,6 +446,9 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				return RpcErrors.ERR_OK;
 			} else {
 
+				BlockMover mover = new BlockMover(this, dnInfo);
+				mover.run();
+				
 				/*
 
 				// WIP initialize objects if not done already

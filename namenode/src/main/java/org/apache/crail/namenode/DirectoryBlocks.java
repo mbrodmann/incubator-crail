@@ -84,7 +84,7 @@ public class DirectoryBlocks extends AbstractNode {
 		while (iter.hasNext()){
 			NameNodeBlockInfo blockInfo = iter.next();
 			blockInfo.setNode(null);
-			blockStore.addBlock(blockInfo);
+			blockStore.reAddBlock(blockInfo);
 		}	
 	}
 

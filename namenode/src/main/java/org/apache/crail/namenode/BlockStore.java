@@ -50,6 +50,11 @@ public class BlockStore {
 		return storageClasses[storageClass].addBlock(blockInfo);
 	}
 
+	public short reAddBlock(NameNodeBlockInfo blockInfo) throws UnknownHostException {
+		int storageClass = blockInfo.getDnInfo().getStorageClass();
+		return storageClasses[storageClass].reAddBlock(blockInfo);
+	}
+
 	public boolean regionExists(BlockInfo region) {
 		int storageClass = region.getDnInfo().getStorageClass();
 		return storageClasses[storageClass].regionExists(region);
@@ -237,6 +242,18 @@ class StorageClass {
 		if (current == null) {
 			current = DataNodeBlocks.fromDataNodeInfo(block.getDnInfo());
 			addDataNode(current);
+		}
+
+		current.touch();
+		current.addFreeBlock(block);
+		return RpcErrors.ERR_OK;
+	}
+
+	short reAddBlock(NameNodeBlockInfo block) throws UnknownHostException {
+		long dnAddress = block.getDnInfo().key();
+		DataNodeBlocks current = membership.get(dnAddress);
+		if (current == null) {
+			return RpcErrors.ERR_OK;
 		}
 
 		current.touch();
