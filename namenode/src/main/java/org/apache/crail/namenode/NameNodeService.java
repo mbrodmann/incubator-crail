@@ -747,15 +747,18 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			int blocksize = Integer.parseInt(conf.get("crail.blocksize"));
 			int limit;
 			
-
-			if(affectedFile.isLast(blockInfo)) {
-				limit = (int) (affectedFile.getCapacity() % blocksize);
+			if(affectedFile instanceof DirectoryBlocks) {
+				limit = 512;
 			} else {
-				limit = Math.min(blocksize, (int) affectedFile.getCapacity());
-			}
-			 
-			if(limit == 0) {
-				continue;
+				if(affectedFile.isLast(blockInfo)) {
+					limit = (int) (affectedFile.getCapacity() % blocksize);
+				} else {
+					limit = Math.min(blocksize, (int) affectedFile.getCapacity());
+				}
+				 
+				if(limit == 0) {
+					continue;
+				}
 			}
 
 			// 2.1) Transfer data from old block into local buffer
@@ -769,7 +772,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			try {
 				StorageFuture future = endpoint.read(buffer, blockInfo,0);
 				future.get();
-				endpoint.close();
+				// endpoint.close();
 			} catch(Exception e) {
 				// At least for tcp, there seems to remain a few issues with read sizes ...
 				e.printStackTrace();
@@ -790,7 +793,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 			// 2.2) write data to freshly allocated block
 			DataNodeInfo target = targetBlock.getDnInfo();
-			// StorageEndpoint targetEndpoint = datanode.createEndpoint(target);
+			//StorageEndpoint targetEndpoint = datanode.createEndpoint(target);
 			StorageEndpoint targetEndpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(target);
 
 			buffer.flip();
@@ -805,7 +808,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			StorageFuture writeFuture = targetEndpoint.write(buffer, targetBlock, 0);
 			writeFuture.get();
 
-			targetEndpoint.close();
+			// targetEndpoint.close();
 
 			// 3) Update AbstractNode to point to new block
 			affectedFile.replaceBlock(blockInfo, targetBlock);
@@ -814,7 +817,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		// 4) Clients should now try to retrieve the new block when sending request to the namenode ==> shutdown datanode
 		dnInfoNn.freeAllBlocks();
 
-		System.out.println("TODO ...");
+		System.out.println("Finished block relocation process ...");
 	}
 	
 	@Override
