@@ -708,6 +708,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 	public void removeDataNodeCompletely(DataNodeInfo dnInfo) throws Exception {
 
+		long start = System.currentTimeMillis();
+
 		// WIP initialize objects if not done already
 		if(this.store == null) {
 			this.store = (CoreDataStore) CrailStore.newInstance(conf);
@@ -747,19 +749,16 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			int blocksize = Integer.parseInt(conf.get("crail.blocksize"));
 			int limit;
 			
-			if(affectedFile instanceof DirectoryBlocks) {
-				limit = 512;
+			if(affectedFile.isLast(blockInfo)) {
+				limit = (int) (affectedFile.getCapacity() % blocksize);
 			} else {
-				if(affectedFile.isLast(blockInfo)) {
-					limit = (int) (affectedFile.getCapacity() % blocksize);
-				} else {
-					limit = Math.min(blocksize, (int) affectedFile.getCapacity());
-				}
-				 
-				if(limit == 0) {
-					continue;
-				}
+				limit = Math.min(blocksize, (int) affectedFile.getCapacity());
 			}
+				
+			if(limit == 0) {
+				continue;
+			}
+			
 
 			// 2.1) Transfer data from old block into local buffer
 			StorageEndpoint endpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(dnInfo);
@@ -817,7 +816,9 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		// 4) Clients should now try to retrieve the new block when sending request to the namenode ==> shutdown datanode
 		dnInfoNn.freeAllBlocks();
 
-		System.out.println("Finished block relocation process ...");
+		long end = System.currentTimeMillis();
+		long time = end - start;
+		System.out.println("Finished block relocation process after " + time + " ms");
 	}
 	
 	@Override
