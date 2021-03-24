@@ -553,6 +553,10 @@ public class CoreDataStore extends CrailStore {
 		nextBlockCache.purge();
 	}
 
+	public void purgeEndpointCache() throws Exception {
+		getDatanodeEndpointCache().purgeEndpointCaches();
+	}
+
 	//-------------------------------------------------------------
 
 	CoreOutputStream getOutputStream(CoreNode file, long writeHint) throws Exception {
