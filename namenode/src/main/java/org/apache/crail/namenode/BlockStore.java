@@ -314,6 +314,10 @@ class StorageClass {
 			return RpcErrors.ERR_DATANODE_NOT_REGISTERED;
 		} else {
 			membership.remove(toBeRemoved.key());
+			anySet.remove(toBeRemoved);
+			for(DataNodeArray affinitySet: affinitySets.values()) {
+				affinitySet.remove(toBeRemoved);
+			}
 			return RpcErrors.ERR_OK;
 		}
 	}
@@ -426,6 +430,15 @@ class StorageClass {
 			lock.writeLock().lock();
 			try {
 				arrayList.add(dataNode);
+			} finally {
+				lock.writeLock().unlock();
+			}
+		}
+
+		public void remove(DataNodeBlocks dataNode) {
+			lock.writeLock().lock();
+			try {
+				arrayList.remove(dataNode);
 			} finally {
 				lock.writeLock().unlock();
 			}

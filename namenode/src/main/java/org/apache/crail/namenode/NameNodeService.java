@@ -279,7 +279,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		
 		//get params
 		FileName fileHash = request.getFileName();
-		
+
 		//rpc
 		AbstractNode parentInfo = fileTree.retrieveParent(fileHash, errorState);
 		if (errorState.getError() != RpcErrors.ERR_OK){
@@ -446,8 +446,11 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				return RpcErrors.ERR_OK;
 			} else {
 
-				BlockMover mover = new BlockMover(this, dnInfo);
-				mover.run();
+				// only needed when not using elastic Crail
+				// otherwise policy will trigger block relocation
+				if(conf.get(CrailConstants.NAMENODE_RPC_SERVICE_KEY) != "org.apache.crail.namenode.ElasticNameNodeService") {
+					removeDataNodeCompletely(dnInfo);
+				}
 				
 				/*
 
