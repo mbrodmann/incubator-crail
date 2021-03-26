@@ -22,6 +22,8 @@ import org.apache.crail.metadata.BlockInfo;
 import org.apache.crail.metadata.DataNodeInfo;
 
 public class NameNodeBlockInfo extends BlockInfo {
+
+
 	private BlockInfo region;
 	private long offset;
 	private AbstractNode node;

@@ -31,7 +31,7 @@ public class TcpRpcConstants {
 	public static int NAMENODE_TCP_QUEUEDEPTH = 32;
 	
 	public static final String NAMENODE_TCP_MESSAGESIZE_KEY = "crail.namenode.tcp.messageSize";
-	public static int NAMENODE_TCP_MESSAGESIZE = 512;	
+	public static int NAMENODE_TCP_MESSAGESIZE = 1048576;
 	
 	public static final String NAMENODE_TCP_CORES_KEY = "crail.namenode.tcp.cores";
 	public static int NAMENODE_TCP_CORES = 1;	

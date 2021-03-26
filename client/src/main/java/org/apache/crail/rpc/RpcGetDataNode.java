@@ -18,8 +18,13 @@
 
 package org.apache.crail.rpc;
 
+import org.apache.crail.metadata.BlockInfo;
 import org.apache.crail.metadata.DataNodeStatistics;
+import org.apache.crail.metadata.RelocationBlockInfo;
+
+import java.util.LinkedList;
 
 public interface RpcGetDataNode extends RpcResponse {
 	public DataNodeStatistics getStatistics();
+	public LinkedList<RelocationBlockInfo> getBlocks();
 }

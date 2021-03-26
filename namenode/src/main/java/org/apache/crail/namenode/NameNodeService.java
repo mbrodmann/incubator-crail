@@ -35,6 +35,7 @@ import org.apache.crail.CrailStore;
 import org.apache.crail.conf.CrailConfiguration;
 import org.apache.crail.conf.CrailConstants;
 import org.apache.crail.core.CoreDataStore;
+import org.apache.crail.core.CoreNode;
 import org.apache.crail.memory.BufferCache;
 import org.apache.crail.metadata.*;
 import org.apache.crail.rpc.RpcErrors;
@@ -449,109 +450,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				// only needed when not using elastic Crail
 				// otherwise policy will trigger block relocation
 				if(conf.get(CrailConstants.NAMENODE_RPC_SERVICE_KEY) != "org.apache.crail.namenode.ElasticNameNodeService") {
-					removeDataNodeCompletely(dnInfo);
+					//removeDataNodeCompletely(dnInfo);
 				}
-				
-				/*
-
-				// WIP initialize objects if not done already
-				if(this.store == null) {
-					this.store = (CoreDataStore) CrailStore.newInstance(conf);
-				}
-
-				if(this.datanode == null) {
-					this.datanode = StorageClient.createInstance(conf.get("crail.storage.types"));
-					this.datanode.init(store.getStatistics(), this.bufferCache, conf, null);
-				}
-
-				// experimental: when datanode is marked and still stores data, try to redistribute the blocks
-				LOG.info("Datanode " + dnInfo + " still stores " + dnInfoNn.getNumberOfUsedBlocks() + " blocks");
-
-
-				LinkedList<NameNodeBlockInfo> involvedFiles = dnInfoNn.involvedFiles();
-				for(NameNodeBlockInfo blockInfo: involvedFiles) {
-
-					AbstractNode affectedFile = blockInfo.getNode();
-
-					if(affectedFile == null) {
-						continue;
-					}
-
-					// Steps:
-					// 1) Allocate new block
-					// 2) Write data to new block
-					// 3) Update AbstractNode to point to new block
-					// 4) Clients should now try to retrieve the new block when sending request to the namenode ==> shutdown datanode
-
-					// 1) Allocate new block
-					NameNodeBlockInfo targetBlock = blockStore.getBlock(blockInfo.getDnInfo().getStorageClass(),0);
-
-					// 2) Write data to new block
-					int blocksize = Integer.parseInt(conf.get("crail.blocksize"));
-					int limit;
-					
-
-					if(affectedFile.isLast(blockInfo)) {
-						limit = (int) (affectedFile.getCapacity() % blocksize);
-					} else {
-						limit = Math.min(blocksize, (int) affectedFile.getCapacity());
-					}
-					 
-					if(limit == 0) {
-						continue;
-					}
-
-					// 2.1) Transfer data from old block into local buffer
-					StorageEndpoint endpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(dnInfo);
-					// StorageEndpoint endpoint = datanode.createEndpoint(dnInfo);
-
-					CrailBuffer buffer = store.allocateBuffer();
-					buffer.clear();
-					buffer.limit(buffer.position() + limit);
-					StorageFuture future = endpoint.read(buffer, blockInfo,0);
-					future.get();
-
-					endpoint.close();
-
-					// Debug print buffer
-					
-					// ByteBuffer result = buffer.getByteBuffer();
-					// result.flip(); // flip the buffer for reading
-					// byte[] bytes = new byte[result.remaining()]; // create a byte array the length of the number of bytes written to the buffer
-					// result.get(bytes); // read the bytes that were written
-					// String packet = new String(bytes);
-					// System.out.println(packet);
-                    
-
-					// 2.2) write data to freshly allocated block
-					DataNodeInfo target = targetBlock.getDnInfo();
-					// StorageEndpoint targetEndpoint = datanode.createEndpoint(target);
-					StorageEndpoint targetEndpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(target);
-
-					buffer.flip();
-
-					// overflows for multi-block files
-					// buffer.limit((int) affectedFile.getCapacity());
-
-					// System.out.println("Limit: " + limit);
-
-					buffer.limit(buffer.position() + limit);
-
-					StorageFuture writeFuture = targetEndpoint.write(buffer, targetBlock, 0);
-					writeFuture.get();
-
-					targetEndpoint.close();
-
-					// 3) Update AbstractNode to point to new block
-					affectedFile.replaceBlock(blockInfo, targetBlock);
-				}
-
-				// 4) Clients should now try to retrieve the new block when sending request to the namenode ==> shutdown datanode
-				dnInfoNn.freeAllBlocks();
-
-				System.out.println("TODO ...");
-
-				*/
 
 			}
 		}
@@ -559,6 +459,20 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		dnInfoNn.touch();
 		response.setServiceId(serviceId);
 		response.setFreeBlockCount(dnInfoNn.getBlockCount());
+
+		// TODO: this has to be improved later on
+		if(dnInfo.getLocationClass() == -1) {
+			LinkedList<RelocationBlockInfo> blocks = new LinkedList<>();
+			for(NameNodeBlockInfo block: dnInfoNn.involvedFiles()) {
+				AbstractNode affectedFile = block.getNode();
+				short isLast = affectedFile.isLast(block) ? (short) 1:0;
+				long capacity = affectedFile.getCapacity();
+				long fd = affectedFile.getFd();
+				blocks.add(new RelocationBlockInfo(block,isLast, capacity, fd));
+			}
+
+			response.setBlocks(blocks);
+		}
 		
 		return RpcErrors.ERR_OK;
 	}	
@@ -616,7 +530,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		//rpc
 		AbstractNode fileInfo = fileTable.get(fd);
 		if (fileInfo == null){
-			return RpcErrors.ERR_FILE_NOT_OPEN;			
+			return RpcErrors.ERR_FILE_NOT_OPEN;
 		}
 		
 		int index = CrailUtils.computeIndex(position);
@@ -642,7 +556,18 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			return RpcErrors.ERR_TOKEN_MISMATCH;
 		} else if (block == null && token == 0){ 
 			return RpcErrors.ERR_CAPACITY_EXCEEDED;
-		} 
+		} else if (token == -1) {
+
+			// allocate fresh block
+			NameNodeBlockInfo newBlock = blockStore.getBlock(fileInfo.getStorageClass(), fileInfo.getLocationClass());
+			if (newBlock == null){
+				return RpcErrors.ERR_NO_FREE_BLOCKS;
+			}
+
+			// update internal state to point to new block
+			fileInfo.replaceBlock(block, newBlock);
+			block = newBlock;
+		}
 		
 		response.setBlockInfo(block);
 		return RpcErrors.ERR_OK;

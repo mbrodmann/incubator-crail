@@ -21,10 +21,12 @@ package org.apache.crail.rpc;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 
 import org.apache.crail.metadata.BlockInfo;
 import org.apache.crail.metadata.DataNodeStatistics;
 import org.apache.crail.metadata.FileInfo;
+import org.apache.crail.metadata.RelocationBlockInfo;
 import org.apache.crail.rpc.RpcCreateFile;
 import org.apache.crail.rpc.RpcDeleteFile;
 import org.apache.crail.rpc.RpcGetBlock;
@@ -34,6 +36,7 @@ import org.apache.crail.rpc.RpcGetLocation;
 import org.apache.crail.rpc.RpcPing;
 import org.apache.crail.rpc.RpcRenameFile;
 import org.apache.crail.rpc.RpcVoid;
+import sun.awt.image.ImageWatched;
 
 public class RpcResponseMessage {
 	public static class VoidRes implements RpcProtocol.NameNodeRpcMessage, RpcVoid {
@@ -558,12 +561,14 @@ public class RpcResponseMessage {
 	}	
 	
 	public static class GetDataNodeRes implements RpcProtocol.NameNodeRpcMessage, RpcGetDataNode {
-		public static int CSIZE = DataNodeStatistics.CSIZE;
+		public int CSIZE = DataNodeStatistics.CSIZE;
 		
 		private DataNodeStatistics statistics;
+		private LinkedList<RelocationBlockInfo> blocks;
 
 		public GetDataNodeRes() {
 			this.statistics = new DataNodeStatistics();
+			this.blocks = new LinkedList<>();
 		}
 		
 		public void setError(short error) {
@@ -580,12 +585,21 @@ public class RpcResponseMessage {
 		
 		public int write(ByteBuffer buffer) {
 			int written = statistics.write(buffer);
+
+			for(RelocationBlockInfo block: blocks) {
+				written += block.write(buffer);
+			}
 			return written;
 		}		
 
 		public void update(ByteBuffer buffer) {
 			try {
 				statistics.update(buffer);
+				while(buffer.hasRemaining()) {
+					RelocationBlockInfo blockInfo = new RelocationBlockInfo();
+					blockInfo.update(buffer);
+					this.blocks.add(blockInfo);
+				}
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 			}
@@ -593,6 +607,15 @@ public class RpcResponseMessage {
 
 		public DataNodeStatistics getStatistics() {
 			return this.statistics;
+		}
+
+		public LinkedList<RelocationBlockInfo> getBlocks() {
+			return this.blocks;
+		}
+
+		public void setBlocks(LinkedList<RelocationBlockInfo> blocks) {
+			this.blocks = blocks;
+			CSIZE += (blocks.size() * RelocationBlockInfo.CSIZE);
 		}
 		
 		public void setFreeBlockCount(int blockCount) {
