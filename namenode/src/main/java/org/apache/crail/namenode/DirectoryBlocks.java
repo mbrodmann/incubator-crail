@@ -66,6 +66,12 @@ public class DirectoryBlocks extends AbstractNode {
 		return false;
 	}
 
+	//TODO: check corner cases?
+	@Override
+	public short getIndex(NameNodeBlockInfo block) {
+		return 0;
+	}
+
 	@Override
 	public NameNodeBlockInfo getBlock(int index) {
 		return blocks.get(index);

@@ -466,9 +466,10 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			for(NameNodeBlockInfo block: dnInfoNn.involvedFiles()) {
 				AbstractNode affectedFile = block.getNode();
 				short isLast = affectedFile.isLast(block) ? (short) 1:0;
+				short index = affectedFile.getIndex(block);
 				long capacity = affectedFile.getCapacity();
 				long fd = affectedFile.getFd();
-				blocks.add(new RelocationBlockInfo(block,isLast, capacity, fd));
+				blocks.add(new RelocationBlockInfo(block,isLast, index, capacity, fd));
 			}
 
 			response.setBlocks(blocks);
@@ -564,8 +565,9 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				return RpcErrors.ERR_NO_FREE_BLOCKS;
 			}
 
-			// update internal state to point to new block
+			// update internal state to point to new block and release old block afterwards
 			fileInfo.replaceBlock(block, newBlock);
+			blockStore.addBlock(block);
 			block = newBlock;
 		}
 		

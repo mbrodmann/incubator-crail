@@ -43,6 +43,7 @@ public abstract class AbstractNode extends FileInfo implements Delayed {
 //	public abstract AbstractNode updateParent() throws Exception;
 
 	public abstract boolean isLast(NameNodeBlockInfo block) throws Exception;
+	public abstract short getIndex(NameNodeBlockInfo block) throws Exception;
 	//block manipulation
 	//adds a new block at a given index, returns true if succesful, false otherwise
 	public abstract boolean addBlock(int index, NameNodeBlockInfo block) throws Exception;

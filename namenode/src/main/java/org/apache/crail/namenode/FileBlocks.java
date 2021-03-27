@@ -58,9 +58,16 @@ public class FileBlocks extends AbstractNode {
 	}
 
 	@Override
+	public short getIndex(NameNodeBlockInfo block) {
+		return (short) this.blocks.indexOf(block);
+	}
+
+	@Override
 	public boolean isLast(NameNodeBlockInfo block) throws Exception {
 		return (blocks.indexOf(block) == (blocks.size()-1));
 	}
+
+
 
 	@Override
 	public boolean addBlock(int index, NameNodeBlockInfo block) {

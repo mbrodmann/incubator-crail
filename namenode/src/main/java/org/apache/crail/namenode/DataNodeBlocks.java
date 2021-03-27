@@ -59,7 +59,6 @@ public class DataNodeBlocks extends DataNodeInfo {
 		regions.put(nnBlock.getRegion().getLba(), nnBlock.getRegion());
 		freeBlocks.add(nnBlock);
 		usedBlocks.remove(nnBlock.getId());
-		int test = 1;
 	}
 
 	public void freeAllBlocks() {
