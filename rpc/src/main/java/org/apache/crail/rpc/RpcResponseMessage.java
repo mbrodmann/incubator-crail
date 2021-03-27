@@ -561,13 +561,15 @@ public class RpcResponseMessage {
 	}	
 	
 	public static class GetDataNodeRes implements RpcProtocol.NameNodeRpcMessage, RpcGetDataNode {
-		public int CSIZE = DataNodeStatistics.CSIZE;
+		public int CSIZE = DataNodeStatistics.CSIZE + 2;
 		
 		private DataNodeStatistics statistics;
+		private short numberOfBlocks;
 		private LinkedList<RelocationBlockInfo> blocks;
 
 		public GetDataNodeRes() {
 			this.statistics = new DataNodeStatistics();
+			this.numberOfBlocks = 0;
 			this.blocks = new LinkedList<>();
 		}
 		
@@ -585,7 +587,8 @@ public class RpcResponseMessage {
 		
 		public int write(ByteBuffer buffer) {
 			int written = statistics.write(buffer);
-
+			buffer.putShort(this.numberOfBlocks);
+			written += 2;
 			for(RelocationBlockInfo block: blocks) {
 				written += block.write(buffer);
 			}
@@ -595,7 +598,8 @@ public class RpcResponseMessage {
 		public void update(ByteBuffer buffer) {
 			try {
 				statistics.update(buffer);
-				while(buffer.hasRemaining()) {
+				this.numberOfBlocks = buffer.getShort();
+				for(int i=0; i<this.numberOfBlocks; i++) {
 					RelocationBlockInfo blockInfo = new RelocationBlockInfo();
 					blockInfo.update(buffer);
 					this.blocks.add(blockInfo);
@@ -615,6 +619,7 @@ public class RpcResponseMessage {
 
 		public void setBlocks(LinkedList<RelocationBlockInfo> blocks) {
 			this.blocks = blocks;
+			this.numberOfBlocks = (short) this.blocks.size();
 			CSIZE += (blocks.size() * RelocationBlockInfo.CSIZE);
 		}
 		

@@ -12,7 +12,12 @@ public class RelocationBlockInfo  extends BlockInfo {
     private long capacity;
     private long fd;
 
-    public RelocationBlockInfo() {}
+    public RelocationBlockInfo() {
+        this.isLast = 0;
+        this.index = 0;
+        this.capacity = 0;
+        this.fd = 0;
+    }
 
     public RelocationBlockInfo(BlockInfo blockInfo, short isLast, short index, long capacity, long fd) {
         this.setBlockInfo(blockInfo);

@@ -27,8 +27,9 @@ import org.apache.crail.rpc.RpcResponseMessage;
 import com.ibm.darpc.DaRPCMessage;
 
 public class DaRPCNameNodeResponse implements DaRPCMessage, RpcNameNodeState {
-	public static final int CSIZE = 4 + Math.max(RpcResponseMessage.GetBlockRes.CSIZE, RpcResponseMessage.RenameRes.CSIZE);
-	
+	//public static final int CSIZE = 4 + Math.max(RpcResponseMessage.GetBlockRes.CSIZE, RpcResponseMessage.RenameRes.CSIZE);
+	public static final int CSIZE = 1048576;
+
 	private short type;
 	private short error;
 	private RpcResponseMessage.VoidRes voidRes;
