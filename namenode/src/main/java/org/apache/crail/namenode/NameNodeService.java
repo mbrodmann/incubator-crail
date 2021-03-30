@@ -114,6 +114,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		int storageClass = request.getStorageClass();
 		int locationClass = request.getLocationClass();
 		boolean enumerable = request.isEnumerable();
+		boolean retry = request.getRetry();
 		
 		//check params
 		if (type.isContainer() && locationClass > 0){
@@ -138,7 +139,34 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		if (locationClass < 0){
 			locationClass = parentInfo.getLocationClass();
 		}
-		
+
+		// used for coherency, to prevent creation of a second copy of a file
+		if(retry) {
+			AbstractNode fileInfo = fileTree.retrieveFile(fileHash, errorState);
+
+			// only proceed when file was already created
+			if(fileInfo != null) {
+				NameNodeBlockInfo fileBlock = blockStore.getBlock(fileInfo.getStorageClass(), fileInfo.getLocationClass());
+				int index = CrailUtils.computeIndex(fileInfo.getDirOffset());
+				NameNodeBlockInfo parentBlock = parentInfo.getBlock(index);
+
+				// set response information
+				if (writeable) {
+					fileInfo.updateToken();
+					response.shipToken(true);
+				} else {
+					response.shipToken(false);
+				}
+				response.setParentInfo(parentInfo);
+				response.setFileInfo(fileInfo);
+				response.setFileBlock(fileBlock);
+				response.setDirBlock(parentBlock);
+			}
+		}
+
+
+		// proceed here normally when retry==false or file was not created yet
+
 		AbstractNode fileInfo = fileTree.createNode(fileHash.getFileComponent(), type, storageClass, locationClass, enumerable);
 		try {
 			AbstractNode oldNode = parentInfo.putChild(fileInfo);
@@ -447,11 +475,12 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				return RpcErrors.ERR_OK;
 			} else {
 
+				removeDataNodeCompletely(dnInfo);
 				// only needed when not using elastic Crail
 				// otherwise policy will trigger block relocation
-				if(conf.get(CrailConstants.NAMENODE_RPC_SERVICE_KEY) != "org.apache.crail.namenode.ElasticNameNodeService") {
-					//removeDataNodeCompletely(dnInfo);
-				}
+				//if(conf.get(CrailConstants.NAMENODE_RPC_SERVICE_KEY) != "org.apache.crail.namenode.ElasticNameNodeService") {
+				//	removeDataNodeCompletely(dnInfo);
+				//}
 
 			}
 		}

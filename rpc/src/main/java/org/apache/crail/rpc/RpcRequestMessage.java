@@ -31,13 +31,14 @@ import org.apache.crail.metadata.FileName;
 
 public class RpcRequestMessage {
 	public static class CreateFileReq implements RpcProtocol.NameNodeRpcMessage {
-		public static int CSIZE = FileName.CSIZE + 16;
+		public static int CSIZE = FileName.CSIZE + 20;
 		
 		protected FileName filename;
 		protected CrailNodeType type;
 		protected int storageClass;
 		protected int locationClass;
 		protected boolean enumerable;
+		protected boolean retry;
 		
 		public CreateFileReq(){
 			this.filename = new FileName();
@@ -45,6 +46,7 @@ public class RpcRequestMessage {
 			this.storageClass = 0;
 			this.locationClass = 0;
 			this.enumerable = true;
+			this.retry = false;
 		}
 		
 		public CreateFileReq(FileName filename, CrailNodeType type, int storageClass, int locationClass, boolean enumerable) {
@@ -53,6 +55,15 @@ public class RpcRequestMessage {
 			this.storageClass = storageClass;
 			this.locationClass = locationClass;
 			this.enumerable = enumerable;
+			this.retry = false;
+		}
+
+		public void setRetry(boolean retry) {
+			this.retry = retry;
+		}
+
+		public boolean getRetry() {
+			return this.retry;
 		}
 
 		public FileName getFileName() {
@@ -89,6 +100,7 @@ public class RpcRequestMessage {
 			buffer.putInt(storageClass);
 			buffer.putInt(locationClass);
 			buffer.putInt(enumerable ? 1 : 0);
+			buffer.putInt(retry ? 1 : 0);
 			
 			return CSIZE;
 		}		
@@ -100,7 +112,9 @@ public class RpcRequestMessage {
 			storageClass = buffer.getInt();
 			locationClass = buffer.getInt();
 			int _enumerable = buffer.getInt();
-			enumerable = (_enumerable == 1) ? true : false;			
+			enumerable = (_enumerable == 1) ? true : false;
+			int _retry = buffer.getInt();
+			enumerable = (_retry == 1) ? true : false;
 		}
 
 		@Override
