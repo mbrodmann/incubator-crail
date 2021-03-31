@@ -31,7 +31,8 @@ import org.apache.crail.metadata.FileName;
 
 public class RpcRequestMessage {
 	public static class CreateFileReq implements RpcProtocol.NameNodeRpcMessage {
-		public static int CSIZE = FileName.CSIZE + 20;
+		//public static int CSIZE = FileName.CSIZE + 20;
+		public static int CSIZE = FileName.CSIZE + 18;
 		
 		protected FileName filename;
 		protected CrailNodeType type;
@@ -100,7 +101,7 @@ public class RpcRequestMessage {
 			buffer.putInt(storageClass);
 			buffer.putInt(locationClass);
 			buffer.putInt(enumerable ? 1 : 0);
-			buffer.putInt(retry ? 1 : 0);
+			buffer.putShort(retry ? (short) 1 : 0);
 			
 			return CSIZE;
 		}		
@@ -113,8 +114,8 @@ public class RpcRequestMessage {
 			locationClass = buffer.getInt();
 			int _enumerable = buffer.getInt();
 			enumerable = (_enumerable == 1) ? true : false;
-			int _retry = buffer.getInt();
-			enumerable = (_retry == 1) ? true : false;
+			short _retry = buffer.getShort();
+			retry = (_retry == 1) ? true : false;
 		}
 
 		@Override

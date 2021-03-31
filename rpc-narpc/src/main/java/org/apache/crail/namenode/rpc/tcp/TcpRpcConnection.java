@@ -68,6 +68,20 @@ public class TcpRpcConnection implements RpcConnection {
 		return new TcpFuture<RpcCreateFile>(future, resp);
 	}
 
+	public RpcFuture<RpcCreateFile> createFile(FileName fileName,
+											   CrailNodeType type, int storageAffinity, int locationAffinity, boolean enumerable, boolean retry)
+			throws IOException {
+		RpcRequestMessage.CreateFileReq req = new RpcRequestMessage.CreateFileReq(fileName, type, storageAffinity, locationAffinity, enumerable);
+		req.setRetry(retry);
+		RpcResponseMessage.CreateFileRes resp = new RpcResponseMessage.CreateFileRes();
+
+		TcpNameNodeRequest request = new TcpNameNodeRequest(req);
+		TcpNameNodeResponse response = new TcpNameNodeResponse(resp);
+		request.setCommand(RpcProtocol.CMD_CREATE_FILE);
+		NaRPCFuture<TcpNameNodeRequest, TcpNameNodeResponse> future = endpoint.issueRequest(request, response);
+		return new TcpFuture<RpcCreateFile>(future, resp);
+	}
+
 	public RpcFuture<RpcGetFile> getFile(FileName fileName, boolean b)
 			throws IOException {
 		RpcRequestMessage.GetFileReq req = new RpcRequestMessage.GetFileReq(fileName, b);

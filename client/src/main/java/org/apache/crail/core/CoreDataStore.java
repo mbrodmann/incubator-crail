@@ -173,6 +173,17 @@ public class CoreDataStore extends CrailStore {
 		return new CreateNodeFuture(this, path, type, fileRes);
 	}
 
+	public Upcoming<CrailNode> createRetry(String path, CrailNodeType type, CrailStorageClass storageClass, CrailLocationClass locationClass, boolean enumerable, boolean retry) throws Exception {
+		FileName name = new FileName(path);
+
+		if (CrailConstants.DEBUG){
+			LOG.info("createNode: name " + path + ", type " + type + ", storageAffinity " + storageClass + ", locationAffinity " + locationClass);
+		}
+
+		RpcFuture<RpcCreateFile> fileRes = rpcConnection.createFile(name, type, storageClass.value(), locationClass.value(), enumerable, retry);
+		return new CreateNodeFuture(this, path, type, fileRes);
+	}
+
 	CoreNode _createNode(String path, CrailNodeType type, RpcCreateFile fileRes) throws Exception {
 		if (fileRes.getError() == RpcErrors.ERR_PARENT_MISSING){
 			throw new IOException("createNode: " + RpcErrors.messages[fileRes.getError()] + ", name " + path);

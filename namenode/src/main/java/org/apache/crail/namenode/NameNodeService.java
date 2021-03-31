@@ -146,7 +146,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 			// only proceed when file was already created
 			if(fileInfo != null) {
-				NameNodeBlockInfo fileBlock = blockStore.getBlock(fileInfo.getStorageClass(), fileInfo.getLocationClass());
+				//NameNodeBlockInfo fileBlock = blockStore.getBlock(fileInfo.getStorageClass(), fileInfo.getLocationClass());
+				NameNodeBlockInfo fileBlock = fileInfo.getBlock(0);
 				int index = CrailUtils.computeIndex(fileInfo.getDirOffset());
 				NameNodeBlockInfo parentBlock = parentInfo.getBlock(index);
 
@@ -161,6 +162,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				response.setFileInfo(fileInfo);
 				response.setFileBlock(fileBlock);
 				response.setDirBlock(parentBlock);
+				return RpcErrors.ERR_OK;
 			}
 		}
 
@@ -713,60 +715,60 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			} else {
 				limit = Math.min(blocksize, (int) affectedFile.getCapacity());
 			}
-				
-			if(limit == 0) {
-				continue;
-			}
+
+			// this will skip blocks that we did not write to yet
+			//if(limit == 0) {
+			//	continue;
+			//}
 			
+			if(limit > 0) {
+				// 2.1) Transfer data from old block into local buffer
+				StorageEndpoint endpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(dnInfo);
+				// StorageEndpoint endpoint = datanode.createEndpoint(dnInfo);
 
-			// 2.1) Transfer data from old block into local buffer
-			StorageEndpoint endpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(dnInfo);
-			// StorageEndpoint endpoint = datanode.createEndpoint(dnInfo);
+				CrailBuffer buffer = store.allocateBuffer();
+				buffer.clear();
+				buffer.limit(buffer.position() + limit);
 
-			CrailBuffer buffer = store.allocateBuffer();
-			buffer.clear();
-			buffer.limit(buffer.position() + limit);
+				try {
+					StorageFuture future = endpoint.read(buffer, blockInfo,0);
+					future.get();
+					// endpoint.close();
+				} catch(Exception e) {
+					// At least for tcp, there seems to remain a few issues with read sizes ...
+					e.printStackTrace();
+				}
 
-			try {
-				StorageFuture future = endpoint.read(buffer, blockInfo,0);
-				future.get();
-				// endpoint.close();
-			} catch(Exception e) {
-				// At least for tcp, there seems to remain a few issues with read sizes ...
-				e.printStackTrace();
+
+				// Debug print buffer
+				/*
+				ByteBuffer result = buffer.getByteBuffer();
+				result.flip(); // flip the buffer for reading
+				byte[] bytes = new byte[result.remaining()]; // create a byte array the length of the number of bytes written to the buffer
+				result.get(bytes); // read the bytes that were written
+				String packet = new String(bytes);
+				System.out.println(packet);
+				*/
+
+				// 2.2) write data to freshly allocated block
+				DataNodeInfo target = targetBlock.getDnInfo();
+				//StorageEndpoint targetEndpoint = datanode.createEndpoint(target);
+				StorageEndpoint targetEndpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(target);
+
+				buffer.flip();
+
+				// overflows for multi-block files
+				// buffer.limit((int) affectedFile.getCapacity());
+
+				// System.out.println("Limit: " + limit);
+
+				buffer.limit(buffer.position() + limit);
+
+				StorageFuture writeFuture = targetEndpoint.write(buffer, targetBlock, 0);
+				writeFuture.get();
+
+				// targetEndpoint.close();
 			}
-					
-
-			
-
-			// Debug print buffer
-			/*
-			ByteBuffer result = buffer.getByteBuffer();
-			result.flip(); // flip the buffer for reading
-			byte[] bytes = new byte[result.remaining()]; // create a byte array the length of the number of bytes written to the buffer
-			result.get(bytes); // read the bytes that were written
-			String packet = new String(bytes);
-			System.out.println(packet);
-			*/
-
-			// 2.2) write data to freshly allocated block
-			DataNodeInfo target = targetBlock.getDnInfo();
-			//StorageEndpoint targetEndpoint = datanode.createEndpoint(target);
-			StorageEndpoint targetEndpoint = this.store.getDatanodeEndpointCache().getDataEndpoint(target);
-
-			buffer.flip();
-
-			// overflows for multi-block files
-			// buffer.limit((int) affectedFile.getCapacity());
-
-			// System.out.println("Limit: " + limit);
-
-			buffer.limit(buffer.position() + limit);
-
-			StorageFuture writeFuture = targetEndpoint.write(buffer, targetBlock, 0);
-			writeFuture.get();
-
-			// targetEndpoint.close();
 
 			// 3) Update AbstractNode to point to new block
 			affectedFile.replaceBlock(blockInfo, targetBlock);

@@ -31,6 +31,9 @@ public interface RpcConnection {
 	public abstract RpcFuture<RpcCreateFile> createFile(
 			FileName filename, CrailNodeType type, int storageClass, int locationClass, boolean enumerable) throws IOException;
 
+	public abstract RpcFuture<RpcCreateFile> createFile(
+			FileName filename, CrailNodeType type, int storageClass, int locationClass, boolean enumerable, boolean retry) throws IOException;
+
 	public abstract RpcFuture<RpcGetFile> getFile(FileName filename,
 			boolean writeable) throws IOException;
 
