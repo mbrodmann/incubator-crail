@@ -69,7 +69,15 @@ public class DirectoryBlocks extends AbstractNode {
 	//TODO: check corner cases?
 	@Override
 	public short getIndex(NameNodeBlockInfo block) {
-		return 0;
+		for (Map.Entry<Integer, NameNodeBlockInfo> entry : blocks.entrySet()) {
+			if (Objects.equals(block, entry.getValue())) {
+				int idx = entry.getKey();
+				return (short) idx;
+			}
+		}
+
+		// Error: requested block not found in DirectoryBlocks
+		return -1;
 	}
 
 	@Override
