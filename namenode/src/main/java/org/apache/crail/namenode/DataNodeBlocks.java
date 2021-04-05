@@ -41,6 +41,7 @@ public class DataNodeBlocks extends DataNodeInfo {
 	private ConcurrentHashMap<Long,NameNodeBlockInfo> usedBlocks;
 	private long token;
 	private boolean scheduleForRemoval;
+	private boolean relocationOngoing;
 
 	public static DataNodeBlocks fromDataNodeInfo(DataNodeInfo dnInfo) throws UnknownHostException{
 		DataNodeBlocks dnInfoNn = new DataNodeBlocks(dnInfo.getStorageType(), dnInfo.getStorageClass(), dnInfo.getLocationClass(), dnInfo.getIpAddress(), dnInfo.getPort());
@@ -53,6 +54,7 @@ public class DataNodeBlocks extends DataNodeInfo {
 		this.freeBlocks = new LinkedBlockingQueue<NameNodeBlockInfo>();
 		this.usedBlocks = new ConcurrentHashMap<Long,NameNodeBlockInfo>();
 		this.scheduleForRemoval = false;
+		this.relocationOngoing = false;
 	}
 
 	public void addFreeBlock(NameNodeBlockInfo nnBlock) {
@@ -92,6 +94,14 @@ public class DataNodeBlocks extends DataNodeInfo {
 
 	public boolean isScheduleForRemoval(){
 		return this.scheduleForRemoval;
+	}
+
+	public void setRelocationOngoing(boolean value) {
+		this.relocationOngoing = value;
+	}
+
+	public boolean getRelocationOngoing() {
+		return this.relocationOngoing;
 	}
 
 	public long getTotalNumberOfBlocks() {

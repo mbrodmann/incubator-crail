@@ -8,6 +8,7 @@ public class DataNodeStatus {
     private short status;
 
     public static final short STATUS_DATANODE_STOP = 1;
+    public static final short STATUS_DATANODE_RELOCATION = 2;
 
     public DataNodeStatus() {
         this.status = 0;

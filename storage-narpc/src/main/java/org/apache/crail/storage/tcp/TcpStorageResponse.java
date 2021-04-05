@@ -131,7 +131,15 @@ public class TcpStorageResponse implements NaRPCMessage {
 		public int size() {
 			return CSIZE;
 		}		
-	}	
+	}
+
+	public WriteResponse getWriteResponse() {
+		return writeResponse;
+	}
+
+	public ReadResponse getReadResponse() {
+		return readResponse;
+	}
 	
 
 }

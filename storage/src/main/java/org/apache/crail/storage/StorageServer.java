@@ -49,6 +49,7 @@ public interface StorageServer extends Configurable, Runnable {
 	public abstract boolean isAlive();
 	public abstract void prepareToShutDown();
 	public abstract InetSocketAddress getAddress();
+	public abstract void setRelocationOngoing();
 	
 	public static void main(String[] args) throws Exception {
 		Logger LOG = CrailUtils.getLogger();
@@ -196,7 +197,6 @@ public interface StorageServer extends Configurable, Runnable {
 
 	public static void processStatus(StorageServer server, RpcConnection rpc, Thread thread, short status) throws Exception {
 		if (status == DataNodeStatus.STATUS_DATANODE_STOP) {
-			//Thread.sleep(600000);
 			server.prepareToShutDown();
 			rpc.close();
 			
@@ -206,6 +206,8 @@ public interface StorageServer extends Configurable, Runnable {
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
+		} else if (status == DataNodeStatus.STATUS_DATANODE_RELOCATION) {
+			server.setRelocationOngoing();
 		}
 	}
 }

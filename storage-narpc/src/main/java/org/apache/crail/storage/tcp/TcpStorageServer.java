@@ -50,6 +50,7 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 	private long keys;
 	private ConcurrentHashMap<Integer, ByteBuffer> dataBuffers;
 	private String dataDirPath;
+	private boolean relocationOngoing;
 	
 	@Override
 	public void init(CrailConfiguration conf, String[] args) throws Exception {
@@ -64,6 +65,7 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 		this.keys = 0;
 		this.dataBuffers = new ConcurrentHashMap<Integer, ByteBuffer>();
 		this.dataDirPath = StorageUtils.getDatanodeDirectory(TcpStorageConstants.STORAGE_TCP_DATA_PATH, address);
+		this.relocationOngoing = false;
 		StorageUtils.clean(TcpStorageConstants.STORAGE_TCP_DATA_PATH, dataDirPath);
 	}
 
@@ -104,6 +106,14 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 	public void prepareToShutDown(){
 
 		LOG.info("Preparing TCP-Storage server for shutdown");
+
+		try {
+			Thread.sleep(60000);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+
 		this.alive = false;
 		
 		try {
@@ -140,6 +150,10 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 	@Override
 	public TcpStorageResponse processRequest(TcpStorageRequest request) {
 		if (request.type() == TcpStorageProtocol.REQ_WRITE){
+			if(this.relocationOngoing) {
+				TcpStorageResponse.WriteResponse writeResponse = new TcpStorageResponse.WriteResponse(-1);
+				return new TcpStorageResponse(writeResponse);
+			}
 			TcpStorageRequest.WriteRequest writeRequest = request.getWriteRequest();
 			ByteBuffer buffer = dataBuffers.get(writeRequest.getKey()).duplicate();
 			long offset = writeRequest.getAddress() - CrailUtils.getAddress(buffer);
@@ -169,5 +183,10 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 
 	@Override
 	public void removeEndpoint(NaRPCServerChannel channel){
+	}
+
+	@Override
+	public void setRelocationOngoing() {
+		this.relocationOngoing = true;
 	}
 }

@@ -54,6 +54,14 @@ public class TcpStorageFuture implements StorageFuture, StorageResult {
 	@Override
 	public StorageResult get() throws InterruptedException, ExecutionException {
 		future.get();
+
+		if(future.getResponse().getWriteResponse() != null) {
+			int size = future.get().getWriteResponse().size();
+			if(size == -1) {
+				throw new InterruptedException();
+			}
+		}
+
 		return this;
 	}
 
