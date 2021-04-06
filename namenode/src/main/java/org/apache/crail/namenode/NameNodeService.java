@@ -477,13 +477,11 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				return RpcErrors.ERR_OK;
 			} else {
 
-				response.setStatus(DataNodeStatus.STATUS_DATANODE_RELOCATION);
-				removeDataNodeCompletely(dnInfo);
-				// only needed when not using elastic Crail
-				// otherwise policy will trigger block relocation
-				//if(conf.get(CrailConstants.NAMENODE_RPC_SERVICE_KEY) != "org.apache.crail.namenode.ElasticNameNodeService") {
-				//	removeDataNodeCompletely(dnInfo);
-				//}
+				// only use internal relocation when enabled
+				if(CrailConstants.ELASTICSTORE_RELOCATION_INTERNAL) {
+					response.setStatus(DataNodeStatus.STATUS_DATANODE_RELOCATION);
+					removeDataNodeCompletely(dnInfo);
+				}
 
 			}
 		}

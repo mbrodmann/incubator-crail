@@ -137,6 +137,9 @@ public class CrailConstants {
 	public static final String ELASTICSTORE_LOGGING_KEY = "crail.elasticstore.logging";
 	public static boolean ELASTICSTORE_LOGGING = false;
 
+	public static final String ELASTICSTORE_RELOCATION_INTERNAL_KEY = "crail.elasticstore.relocation.internal";
+	public static boolean ELASTICSTORE_RELOCATION_INTERNAL = false;
+
 	public static void updateConstants(CrailConfiguration conf){
 		//general
 		if (conf.get(DIRECTORY_DEPTH_KEY) != null) {
@@ -255,6 +258,9 @@ public class CrailConstants {
 		if (conf.get(ELASTICSTORE_LOGGING_KEY) != null) {
 			ELASTICSTORE_LOGGING = Boolean.parseBoolean(conf.get(ELASTICSTORE_LOGGING_KEY));
 		}
+		if(conf.get(ELASTICSTORE_RELOCATION_INTERNAL_KEY) != null) {
+			ELASTICSTORE_RELOCATION_INTERNAL = Boolean.parseBoolean(conf.get(ELASTICSTORE_RELOCATION_INTERNAL_KEY));
+		}
 	}
 
 	public static void printConf(){
@@ -294,6 +300,7 @@ public class CrailConstants {
 		LOG.info(ELASTICSTORE_MINNODES_KEY + " " + ELASTICSTORE_MINNODES);
 		LOG.info(ELASTICSTORE_POLICYRUNNER_INTERVAL_KEY + " " + ELASTICSTORE_POLICYRUNNER_INTERVAL);
 		LOG.info(ELASTICSTORE_LOGGING_KEY + " " + ELASTICSTORE_LOGGING);
+		LOG.info(ELASTICSTORE_RELOCATION_INTERNAL_KEY + " " + ELASTICSTORE_RELOCATION_INTERNAL);
 	}
 
 	public static void verify() throws IOException {
