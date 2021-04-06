@@ -564,7 +564,13 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			return RpcErrors.ERR_FILE_NOT_OPEN;
 		}
 		
-		int index = CrailUtils.computeIndex(position);
+		int index;
+		if(token == -1) {
+			index = (int) position;
+		} else {
+			index = CrailUtils.computeIndex(position);
+		}
+		
 		if (index < 0){
 			return RpcErrors.ERR_POSITION_NEGATIV;			
 		}
