@@ -37,6 +37,7 @@ public class NvmfStorageServer implements StorageServer {
 	private long address;
 	private boolean initialized = false;
 	private Controller controller;
+	private boolean relocationOngoing = false;
 
 	public NvmfStorageServer() {}
 
@@ -142,5 +143,10 @@ public class NvmfStorageServer implements StorageServer {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public void setRelocationOngoing() {
+		this.relocationOngoing = true;
 	}
 }

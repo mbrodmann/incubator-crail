@@ -47,6 +47,7 @@ public class RdmaStorageServer implements Runnable, StorageServer {
 	private String dataDirPath;
 	private long allocatedSize;
 	private int fileCount;
+	private boolean relocationOngoing = false;
 	
 	public RdmaStorageServer() throws Exception {
 		this.isAlive = false;
@@ -171,5 +172,10 @@ public class RdmaStorageServer implements Runnable, StorageServer {
 			e.printStackTrace();
 		}
 
+	}
+
+	@Override
+	public void setRelocationOngoing() {
+		this.relocationOngoing = true;
 	}
 }

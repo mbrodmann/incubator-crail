@@ -79,6 +79,28 @@ public class DaRPCNameNodeConnection implements RpcConnection {
 		
 		return nameNodeFuture;
 	}
+
+	// TODO check correctness
+	@Override
+	public RpcFuture<RpcCreateFile> createFile(FileName filename, CrailNodeType type, int storageClass, int locationClass, boolean enumerable, boolean retry) throws IOException {
+		if (CrailConstants.DEBUG){
+			LOG.debug("RPC: createFile, fileType " + type + ", storageClass " + storageClass + ", locationClass " + locationClass);
+		}
+		
+		RpcRequestMessage.CreateFileReq createFileReq = new RpcRequestMessage.CreateFileReq(filename, type, storageClass, locationClass, enumerable);
+		createFileReq.setRetry(retry);
+		DaRPCNameNodeRequest request = new DaRPCNameNodeRequest(createFileReq);
+		request.setCommand(RpcProtocol.CMD_CREATE_FILE);
+		
+		RpcResponseMessage.CreateFileRes fileRes = new RpcResponseMessage.CreateFileRes();
+		DaRPCNameNodeResponse response = new DaRPCNameNodeResponse(fileRes);
+		
+		DaRPCFuture<DaRPCNameNodeRequest, DaRPCNameNodeResponse> future = issueRPC(request, response);
+		
+		DaRPCNameNodeFuture<RpcCreateFile> nameNodeFuture = new DaRPCNameNodeFuture<RpcCreateFile>(future, fileRes);
+		
+		return nameNodeFuture;
+	}
 	
 	@Override
 	public RpcFuture<RpcGetFile> getFile(FileName filename, boolean writeable) throws IOException {
