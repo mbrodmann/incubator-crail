@@ -107,13 +107,6 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 
 		LOG.info("Preparing TCP-Storage server for shutdown");
 
-		try {
-			Thread.sleep(60000);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-
 		this.alive = false;
 		
 		try {

@@ -75,7 +75,8 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 		if (status.get() == RPC_PENDING){
 			try {
 				for (Future<R> dataFuture = pendingDataOps.poll(); dataFuture != null; dataFuture = pendingDataOps.poll()){
-					R result = dataFuture.get();
+					//R result = dataFuture.get();
+					R result = dataFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
 					this.aggregate(result);
 				}
 				completeOperation();

@@ -18,12 +18,17 @@
 
 package org.apache.crail.storage.tcp;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.crail.storage.StorageFuture;
 import org.apache.crail.storage.StorageResult;
+import org.apache.crail.utils.TimeoutExecutor;
 
 import com.ibm.narpc.NaRPCFuture;
 
@@ -68,7 +73,15 @@ public class TcpStorageFuture implements StorageFuture, StorageResult {
 	@Override
 	public StorageResult get(long timeout, TimeUnit unit)
 			throws InterruptedException, ExecutionException, TimeoutException {
-		future.get(timeout, unit);
+
+		Callable<Object> task = new Callable<Object>() {
+			public Object call() throws InterruptedException, ExecutionException, TimeoutException {
+				return future.get(timeout, unit);
+			}
+		 };
+		Future<Object> timeout_future = TimeoutExecutor.executorService.submit(task);
+		timeout_future.get(timeout, unit);
+		
 		return this;
 	}
 
