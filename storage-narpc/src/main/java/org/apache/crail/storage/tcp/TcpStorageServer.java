@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.crail.conf.CrailConfiguration;
 import org.apache.crail.conf.CrailConstants;
 import org.apache.crail.storage.StorageResource;
+import org.apache.crail.storage.StorageRpcClient;
 import org.apache.crail.storage.StorageServer;
 import org.apache.crail.storage.StorageUtils;
 import org.apache.crail.utils.CrailUtils;
@@ -181,5 +182,10 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 	@Override
 	public void setRelocationOngoing() {
 		this.relocationOngoing = true;
+	}
+
+	@Override
+	public void ackReadyForRelocation(StorageRpcClient storageRpc) throws Exception {
+		storageRpc.ackRejectWrites();
 	}
 }

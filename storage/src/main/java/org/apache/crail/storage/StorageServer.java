@@ -50,7 +50,8 @@ public interface StorageServer extends Configurable, Runnable {
 	public abstract void prepareToShutDown();
 	public abstract InetSocketAddress getAddress();
 	public abstract void setRelocationOngoing();
-	
+	public abstract void ackReadyForRelocation(StorageRpcClient storageRpc) throws Exception;
+
 	public static void main(String[] args) throws Exception {
 		Logger LOG = CrailUtils.getLogger();
 		CrailConfiguration conf = CrailConfiguration.createConfigurationFromFile();
@@ -190,12 +191,12 @@ public interface StorageServer extends Configurable, Runnable {
 			sumCount += diffCount;			
 			
 			LOG.info("datanode statistics, freeBlocks " + sumCount);
-			processStatus(server, rpcConnection, thread, status);
+			processStatus(storageRpc, server, rpcConnection, thread, status);
 			Thread.sleep(CrailConstants.STORAGE_KEEPALIVE*1000);
 		}			
 	}
 
-	public static void processStatus(StorageServer server, RpcConnection rpc, Thread thread, short status) throws Exception {
+	public static void processStatus(StorageRpcClient storageRpc, StorageServer server, RpcConnection rpc, Thread thread, short status) throws Exception {
 		if (status == DataNodeStatus.STATUS_DATANODE_STOP) {
 			server.prepareToShutDown();
 			rpc.close();
@@ -208,6 +209,7 @@ public interface StorageServer extends Configurable, Runnable {
 			}
 		} else if (status == DataNodeStatus.STATUS_DATANODE_RELOCATION) {
 			server.setRelocationOngoing();
+			server.ackReadyForRelocation(storageRpc);
 		}
 	}
 }

@@ -7,8 +7,17 @@ public class DataNodeStatus {
 
     private short status;
 
+    // Namenode tells Datanode to stop
     public static final short STATUS_DATANODE_STOP = 1;
+
+    // Namenode tells Datanode to prepare for relocation
     public static final short STATUS_DATANODE_RELOCATION = 2;
+
+    // Namenode tells Relocator that Datanode is not ready yet
+    public static final short STATUS_DATANODE_PREPARING_RELOCATION = 3;
+
+    // Namenode tells Relocator that Datanode is ready for relocation
+    public static final short STATUS_DATANODE_READY_RELOCATION = 4;
 
     public DataNodeStatus() {
         this.status = 0;

@@ -21,6 +21,7 @@ package org.apache.crail.storage.nvmf;
 import com.ibm.jnvmf.*;
 import org.apache.crail.conf.CrailConfiguration;
 import org.apache.crail.storage.StorageResource;
+import org.apache.crail.storage.StorageRpcClient;
 import org.apache.crail.storage.StorageServer;
 import org.apache.crail.utils.CrailUtils;
 import org.slf4j.Logger;
@@ -148,5 +149,10 @@ public class NvmfStorageServer implements StorageServer {
 	@Override
 	public void setRelocationOngoing() {
 		this.relocationOngoing = true;
+	}
+
+	@Override
+	public void ackReadyForRelocation(StorageRpcClient storageRpc) throws Exception {
+		storageRpc.ackRejectWrites();
 	}
 }

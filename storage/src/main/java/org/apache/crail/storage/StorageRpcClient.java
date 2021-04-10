@@ -66,5 +66,14 @@ public class StorageRpcClient {
 		InetSocketAddress inetAddress = serverAddress;
 		DataNodeInfo dnInfo = new DataNodeInfo(storageType, storageClass.value(), locationClass.value(), inetAddress.getAddress().getAddress(), inetAddress.getPort());
 		return this.rpcConnection.getDataNode(dnInfo).get(CrailConstants.RPC_TIMEOUT, TimeUnit.MILLISECONDS).getStatistics();
-	}	
+	}
+
+	// later on things should be improved by creating new RPCs
+	// for fast prototyping for now we reuse existing RPCs
+	// locationClass == -2, symbols the ACK to the namenode
+	public DataNodeStatistics ackRejectWrites() throws Exception{
+		InetSocketAddress inetAddress = serverAddress;
+		DataNodeInfo dnInfo = new DataNodeInfo(storageType, storageClass.value(), -2, inetAddress.getAddress().getAddress(), inetAddress.getPort());
+		return this.rpcConnection.getDataNode(dnInfo).get(CrailConstants.RPC_TIMEOUT, TimeUnit.MILLISECONDS).getStatistics();
+	}
 }

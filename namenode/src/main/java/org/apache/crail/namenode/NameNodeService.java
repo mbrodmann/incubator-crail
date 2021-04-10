@@ -481,6 +481,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				if(CrailConstants.ELASTICSTORE_RELOCATION_INTERNAL) {
 					response.setStatus(DataNodeStatus.STATUS_DATANODE_RELOCATION);
 					removeDataNodeCompletely(dnInfo);
+				} else {
+					response.setStatus(DataNodeStatus.STATUS_DATANODE_RELOCATION);
 				}
 
 			}
@@ -491,6 +493,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		response.setFreeBlockCount(dnInfoNn.getBlockCount());
 
 		// TODO: this has to be improved later on
+		// TODO: replace this with a new status field for communicating different events
+		// supply list of currently stored blocks for relocation
 		if(dnInfo.getLocationClass() == -1) {
 			LinkedList<RelocationBlockInfo> blocks = new LinkedList<>();
 			for(NameNodeBlockInfo block: dnInfoNn.involvedFiles()) {
@@ -503,6 +507,20 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			}
 
 			response.setBlocks(blocks);
+		}
+
+		// process ACK from datanode stating datanode is ready for relocation
+		if(dnInfo.getLocationClass() == -2) {
+			dnInfoNn.setRelocationACKed(true);
+		}
+
+		// process req from external block relocator to learn about datanode status
+		if(dnInfo.getLocationClass() == -3) {
+			if(dnInfoNn.getRelocationACKed()) {
+				response.getStatistics().setStatus(DataNodeStatus.STATUS_DATANODE_READY_RELOCATION);
+			} else {
+				response.getStatistics().setStatus(DataNodeStatus.STATUS_DATANODE_PREPARING_RELOCATION);
+			}
 		}
 		
 		return RpcErrors.ERR_OK;
