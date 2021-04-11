@@ -81,6 +81,13 @@ public class TcpStorageFuture implements StorageFuture, StorageResult {
 		 };
 		Future<Object> timeout_future = TimeoutExecutor.executorService.submit(task);
 		timeout_future.get(timeout, unit);
+
+		if(future.getResponse().getWriteResponse() != null) {
+			int size = future.get().getWriteResponse().size();
+			if(size == -1) {
+				throw new InterruptedException();
+			}
+		}
 		
 		return this;
 	}
