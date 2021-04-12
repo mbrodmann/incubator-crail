@@ -181,7 +181,15 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 
 	@Override
 	public void setRelocationOngoing() {
-		this.relocationOngoing = true;
+
+		try {
+			this.relocationOngoing = true;
+			this.serverGroup.close();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+
+
 	}
 
 	@Override

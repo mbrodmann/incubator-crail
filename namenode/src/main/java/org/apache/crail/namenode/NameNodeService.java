@@ -68,6 +68,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 	private StorageClient datanode = null;
 	private CrailConfiguration conf = CrailConfiguration.createConfigurationFromFile();
 	private BufferCache bufferCache;
+	private ConcurrentHashMap<NameNodeBlockInfo, NameNodeBlockInfo> blockReplacement;
 	
 	public NameNodeService() throws IOException {
 		URI uri = URI.create(CrailConstants.NAMENODE_ADDRESS);
@@ -90,6 +91,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		// WIP: block transfer related objects
 		try {
 			this.bufferCache = BufferCache.createInstance(CrailConstants.CACHE_IMPL);
+			this.blockReplacement = new ConcurrentHashMap<>();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -619,9 +621,16 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 				return RpcErrors.ERR_NO_FREE_BLOCKS;
 			}
 
-			// update internal state to point to new block and release old block afterwards
+			// return new block and add to mapping
+			block = newBlock;
+			this.blockReplacement.put(block, newBlock);
+		} else if (token == -2) {
+
+			NameNodeBlockInfo newBlock = this.blockReplacement.get(block);
 			fileInfo.replaceBlock(block, newBlock);
 			blockStore.addBlock(block);
+			this.blockReplacement.remove(block);
+
 			block = newBlock;
 		}
 		
