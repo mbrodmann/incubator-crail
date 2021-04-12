@@ -456,6 +456,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 	@Override
 	public short getDataNode(RpcRequestMessage.GetDataNodeReq request, RpcResponseMessage.GetDataNodeRes response, RpcNameNodeState errorState) throws Exception {
 		//check protocol
+
 		if (!RpcProtocol.verifyProtocol(RpcProtocol.CMD_GET_DATANODE, request, response)){
 			return RpcErrors.ERR_PROTOCOL_MISMATCH;
 		}			
@@ -585,7 +586,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		}
 		
 		int index;
-		if(token == -1) {
+		if(token == -1 || token == -2) {
 			index = (int) position;
 		} else {
 			index = CrailUtils.computeIndex(position);
@@ -622,8 +623,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			}
 
 			// return new block and add to mapping
-			block = newBlock;
 			this.blockReplacement.put(block, newBlock);
+			block = newBlock;
 		} else if (token == -2) {
 
 			NameNodeBlockInfo newBlock = this.blockReplacement.get(block);
