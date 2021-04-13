@@ -42,7 +42,7 @@ import com.ibm.narpc.NaRPCService;
 
 public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<TcpStorageRequest, TcpStorageResponse> {
 	private static final Logger LOG = CrailUtils.getLogger();
-	
+
 	private NaRPCServerGroup<TcpStorageRequest, TcpStorageResponse> serverGroup;
 	private NaRPCServerEndpoint<TcpStorageRequest, TcpStorageResponse> serverEndpoint;
 	private InetSocketAddress address;
@@ -52,11 +52,11 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 	private ConcurrentHashMap<Integer, ByteBuffer> dataBuffers;
 	private String dataDirPath;
 	private boolean relocationOngoing;
-	
+
 	@Override
 	public void init(CrailConfiguration conf, String[] args) throws Exception {
 		TcpStorageConstants.init(conf, args);
-		
+
 		this.serverGroup = new NaRPCServerGroup<TcpStorageRequest, TcpStorageResponse>(this, TcpStorageConstants.STORAGE_TCP_QUEUE_DEPTH, (int) CrailConstants.BLOCK_SIZE*2, false, TcpStorageConstants.STORAGE_TCP_CORES);
 		this.serverEndpoint = serverGroup.createServerEndpoint();
 		this.address = StorageUtils.getDataNodeAddress(TcpStorageConstants.STORAGE_TCP_INTERFACE, TcpStorageConstants.STORAGE_TCP_PORT);
@@ -86,7 +86,7 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 			ByteBuffer buffer = dataChannel.map(MapMode.READ_WRITE, 0, TcpStorageConstants.STORAGE_TCP_ALLOCATION_SIZE);
 			dataBuffers.put(fileId, buffer);
 			dataFile.close();
-			dataChannel.close();			
+			dataChannel.close();
 			long address = CrailUtils.getAddress(buffer);
 			resource = StorageResource.createResource(address, buffer.capacity(), fileId);
 		}
@@ -109,7 +109,7 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 		LOG.info("Preparing TCP-Storage server for shutdown");
 
 		this.alive = false;
-		
+
 		try {
 			serverEndpoint.close();
 			serverGroup.close();
@@ -184,7 +184,7 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 
 		try {
 			this.relocationOngoing = true;
-			this.serverGroup.close();
+			//this.serverGroup.close();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}

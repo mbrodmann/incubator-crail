@@ -161,6 +161,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 					response.shipToken(false);
 				}
 				response.setParentInfo(parentInfo);
+				fileInfo.resetCapacity();
 				response.setFileInfo(fileInfo);
 				response.setFileBlock(fileBlock);
 				response.setDirBlock(parentBlock);
