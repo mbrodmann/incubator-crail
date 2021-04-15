@@ -28,4 +28,6 @@ public interface CrailInputStream {
 	public int available();
 	public long position();
 	void close() throws Exception;
+	void closeForce() throws Exception;
+	public long getFd();
 }

@@ -115,6 +115,19 @@ public class CoreInputStream extends CoreStream implements CrailInputStream {
 			LOG.info("CoreInputStream, close, path " + this.getFile().getPath() + ", fd " + getFile().getFd() + ", streamId " + getStreamId());
 		}	
 	}
+
+	public void closeForce() throws Exception {
+		updateIOStats();
+		node.closeInputStream(this);
+		open = false;
+		if (CrailConstants.DEBUG){
+			LOG.info("CoreInputStream, close, path " + this.getFile().getPath() + ", fd " + getFile().getFd() + ", streamId " + getStreamId());
+		}
+	}
+
+	public long getFd() {
+		return this.node.getFd();
+	}
 	
 	// --------------------------
 	

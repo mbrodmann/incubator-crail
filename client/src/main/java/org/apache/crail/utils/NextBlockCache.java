@@ -59,6 +59,10 @@ public class NextBlockCache {
 			this.fileBlockCache = new ConcurrentHashMap<Long, RpcFuture<RpcGetBlock>>();
 		}
 
+		public void clear() {
+			this.fileBlockCache.clear();
+		}
+
 		public void put(long blockstart, RpcFuture<RpcGetBlock> block){
 			this.fileBlockCache.putIfAbsent(blockstart, block);
 		}

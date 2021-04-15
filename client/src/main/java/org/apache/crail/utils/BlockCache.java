@@ -66,6 +66,10 @@ public class BlockCache {
 			return this.fileBlockCache.get(blockstart);
 		}
 
+		public void clear() {
+			this.fileBlockCache.clear();
+		}
+
 		public boolean containsKey(long blockstart) {
 			return this.fileBlockCache.containsKey(blockstart);
 		}

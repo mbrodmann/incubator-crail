@@ -564,6 +564,14 @@ public class CoreDataStore extends CrailStore {
 		nextBlockCache.purge();
 	}
 
+	public void removeBlockCacheEntries(long fd) {
+		this.blockCache.getFileBlockCache(fd).clear();
+	}
+
+	public void removeNextBlockCacheEntries(long fd) {
+		this.nextBlockCache.getFileBlockCache(fd).clear();
+	}
+
 	public void purgeEndpointCache() throws Exception {
 		getDatanodeEndpointCache().purgeEndpointCaches();
 	}

@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.concurrent.Future;
 
 import org.apache.crail.conf.CrailConstants;
+import org.apache.crail.core.CoreDataStore;
 import org.apache.crail.utils.CrailUtils;
 import org.apache.crail.utils.RingBuffer;
 import org.slf4j.Logger;
@@ -47,18 +48,27 @@ public abstract class CrailBufferedInputStream extends InputStream {
 	private CrailBufferedStatistics statistics;
 	private int actualSliceSize;
 	private long capacity;
+	private int queueDepth;
 	
 	public abstract CrailInputStream getStream() throws Exception;
 	public abstract void putStream() throws Exception;
+	public abstract void addStream() throws Exception;
 	
 	CrailBufferedInputStream(CrailStore fs, int queueDepth, long capacity) throws Exception {
 		this.fs = fs;
-		this.position = 0;
 		this.capacity = capacity;
+		this.queueDepth = queueDepth;
+
+		init();
+
+	}
+
+	public void init() throws Exception {
+		this.position = 0;
 		this.tmpByteBuf = new byte[1];
 		this.tmpBoundaryBuffer = ByteBuffer.allocate(8);
 		this.statistics = new CrailBufferedStatistics("buffered/in");
-		
+
 		this.actualSliceSize = Math.min(CrailConstants.BUFFER_SIZE, CrailConstants.SLICE_SIZE);
 		int allocationSize = queueDepth*actualSliceSize;
 		this.originalBuffers = new LinkedList<CrailBuffer>();
@@ -67,7 +77,7 @@ public abstract class CrailBufferedInputStream extends InputStream {
 		this.freeSlices = new RingBuffer<CrailBuffer>(queueDepth);
 		this.pendingFutures = new RingBuffer<Future<CrailResult>>(queueDepth);
 		this.tmpSlices = new RingBuffer<CrailBuffer>(queueDepth);
-		
+
 		for (int currentSize = 0; currentSize < allocationSize; currentSize += CrailConstants.BUFFER_SIZE){
 			CrailBuffer buffer = fs.allocateBuffer();
 			originalBuffers.add(buffer);
@@ -81,11 +91,11 @@ public abstract class CrailBufferedInputStream extends InputStream {
 				if (freeSlices.size() >= queueDepth){
 					break;
 				}
-				
+
 				int newpos = buffer.position() + actualSliceSize;
 				buffer.clear();
 				buffer.position(newpos);
-			}			
+			}
 		}
 		this.open = true;
 	}
@@ -124,26 +134,75 @@ public abstract class CrailBufferedInputStream extends InputStream {
 				return 0;
 			}
 
-			int sumLen = 0;
-			while (len > 0) {
-				CrailBuffer slice = getSlice(true);
-				if (slice == null){
-					break;
+			// try until read operation succeeds
+			// catch clause will reset metadata ==> in case a block was moved in the meanwhile
+			// TODO: add max no. of retries
+			while(true) {
+
+				try {
+					// reset variables every time
+					int sumLen = 0;
+					int offset = off;
+					int length = len;
+
+					// double-check whether resetting to original values causes any problems
+					init();
+
+					while (length > 0) {
+						CrailBuffer slice = getSlice(true);
+						if (slice == null){
+							break;
+						}
+						int bufferRemaining = Math.min(length, slice.remaining());
+						slice.get(buf, offset, bufferRemaining);
+						length -= bufferRemaining;
+						offset += bufferRemaining;
+						sumLen += bufferRemaining;
+						position += bufferRemaining;
+						syncSlice();
+					}
+
+					if (sumLen > 0){
+						return sumLen;
+					} else if (readySlices.size() + pendingSlices.size() > 0){
+						return 0;
+					} else {
+						return -1;
+					}
+				} catch (Exception e) {
+
+					if(CrailConstants.ELASTICSTORE_LOG_RETRIES) {
+						LOG.info("Retry inputStream.read() for FD:" + this.getStream().getFd());
+					}
+
+					// reset metadata to contact namenode again and fetch up-to-date metadata
+
+					// TODO: resetting on a per-file basis did not work
+					// TODO: for every file with old block information it is tried again to contact old datanode
+					// TODO: poosible solution in between => delete all blocks of failing datanode ...
+					// ((CoreDataStore) fs).removeBlockCacheEntries(this.getStream().getFd());
+					// ((CoreDataStore) fs).removeNextBlockCacheEntries(this.getStream().getFd());
+
+					((CoreDataStore) fs).purgeCache();
+
+					while(!pendingFutures.isEmpty()){
+						Future<CrailResult> future = pendingFutures.poll();
+						try {
+							future.get();
+						} catch (Exception ex) {}
+					}
+
+					while(!originalBuffers.isEmpty()){
+						CrailBuffer buffer = originalBuffers.remove();
+						fs.freeBuffer(buffer);
+					}
+
+					// close inputstream and open new
+					// TODO: can inputstream be reused?
+					((CoreDataStore) fs).purgeEndpointCache();
+					this.getStream().closeForce();
+					addStream();
 				}
-				int bufferRemaining = Math.min(len, slice.remaining());
-				slice.get(buf, off, bufferRemaining);
-				len -= bufferRemaining;
-				off += bufferRemaining;
-				sumLen += bufferRemaining;		
-				position += bufferRemaining;
-				syncSlice();
-			}	
-			if (sumLen > 0){
-				return sumLen;
-			} else if (readySlices.size() + pendingSlices.size() > 0){
-				return 0;
-			} else {
-				return -1;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

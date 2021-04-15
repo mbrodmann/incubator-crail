@@ -24,9 +24,13 @@ import org.apache.crail.conf.CrailConstants;
 
 class FileBufferedInputStream extends CrailBufferedInputStream {
 	private CrailInputStream inputStream;
+	private CrailFile file;
+	private long readHint;
 	
 	FileBufferedInputStream(CrailFile file, long readHint) throws Exception {
 		super(file.getFileSystem(), Math.max(CrailConstants.BUFFER_SIZE, CrailConstants.SLICE_SIZE)/Math.min(CrailConstants.BUFFER_SIZE, CrailConstants.SLICE_SIZE), file.getCapacity());
+		this.file = file;
+		this.readHint = readHint;
 		this.inputStream = file.getDirectInputStream(readHint);
 	}
 
@@ -37,7 +41,12 @@ class FileBufferedInputStream extends CrailBufferedInputStream {
 
 	@Override
 	public void putStream() throws Exception {
-		
+
+	}
+
+	@Override
+	public void addStream() throws Exception {
+		this.inputStream = file.getDirectInputStream(readHint);
 	}
 
 	@Override
