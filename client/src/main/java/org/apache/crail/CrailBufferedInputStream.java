@@ -64,6 +64,7 @@ public abstract class CrailBufferedInputStream extends InputStream {
 	}
 
 	public void init() throws Exception {
+		// TODO: check how this has to be adapted in combination with "seek" operation
 		this.position = 0;
 		this.tmpByteBuf = new byte[1];
 		this.tmpBoundaryBuffer = ByteBuffer.allocate(8);

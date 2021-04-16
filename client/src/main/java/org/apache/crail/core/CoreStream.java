@@ -240,8 +240,8 @@ public abstract class CoreStream {
 			incStats(endpoint.isLocal());
 			return subFuture;
 		} catch(IOException e){
-			LOG.info("ERROR: failed data operation");
-			e.printStackTrace();
+			//LOG.info("ERROR: failed data operation");
+			//e.printStackTrace();
 			throw e;
 		}
 	}

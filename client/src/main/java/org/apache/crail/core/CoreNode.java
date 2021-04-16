@@ -129,7 +129,7 @@ public class CoreNode implements CrailNode {
 		fs.unregisterOutputStream(coreStream);
 	}	
 	
-	FileInfo getFileInfo(){
+	public FileInfo getFileInfo(){
 		return fileInfo;
 	}	
 	

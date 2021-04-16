@@ -99,6 +99,16 @@ public class CoreOutputStream extends CoreStream implements CrailOutputStream {
 			LOG.info("CoreOutputStream, close, path " + this.getFile().getPath() + ", fd " + getFile().getFd() + ", streamId " + getStreamId() + ", capacity " + getFile().getCapacity());
 		}	
 	}
+
+	public void closeForce() throws Exception {
+
+		updateIOStats();
+		node.closeOutputStream(this);
+		open = false;
+		if (CrailConstants.DEBUG){
+			LOG.info("CoreOutputStream, close, path " + this.getFile().getPath() + ", fd " + getFile().getFd() + ", streamId " + getStreamId() + ", capacity " + getFile().getCapacity());
+		}
+	}
 	
 	// ----------------------
 	

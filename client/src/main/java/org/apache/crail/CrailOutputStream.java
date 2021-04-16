@@ -28,4 +28,5 @@ public interface CrailOutputStream {
 	long position();
 	long getWriteHint();
 	void close() throws Exception;
+	void closeForce() throws Exception;
 }
