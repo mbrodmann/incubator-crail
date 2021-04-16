@@ -185,6 +185,11 @@ class CoreEarlyFile implements CrailFile, CrailKeyValue {
 		return file().getFd();
 	}
 
+	@Override
+	public FileInfo getFileInfo() {
+		return this.file.getFileInfo();
+	}
+
 	private synchronized CrailFile file() {
 		try {
 			if (file == null){

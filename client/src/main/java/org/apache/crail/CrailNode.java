@@ -23,7 +23,6 @@ import org.apache.crail.metadata.FileInfo;
 
 public interface CrailNode {
 	public CrailStore getFileSystem();
-	public FileInfo getFile();
 	public FileInfo getFileInfo();
 	public String getPath(); 
 	public abstract CrailNode syncDir() throws Exception;
