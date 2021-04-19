@@ -18,6 +18,7 @@
 
 package org.apache.crail;
 
+import org.apache.crail.core.CoreStream;
 import org.apache.crail.utils.MultiFuture;
 
 class CrailPurgeOperation extends MultiFuture<CrailResult, CrailResult> implements CrailResult {
@@ -26,6 +27,12 @@ class CrailPurgeOperation extends MultiFuture<CrailResult, CrailResult> implemen
 	public CrailPurgeOperation() {
 		this.completedLen = 0;
 	}
+	
+	@Override
+	public CoreStream getStream(){
+		// TODO 
+		return null;
+	};
 
 	@Override
 	public void aggregate(CrailResult obj) {

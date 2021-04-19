@@ -22,4 +22,6 @@ import java.util.concurrent.Future;
 
 public interface StorageFuture extends Future<StorageResult> {
 	public boolean isSynchronous();
+	public void addRetryInfo(RetryInfo retryInfo);
+	public RetryInfo getRetryInfo();
 }

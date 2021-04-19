@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.crail.storage.RetryInfo;
 import org.apache.crail.storage.StorageFuture;
 import org.apache.crail.storage.StorageResult;
 import org.apache.crail.utils.CrailUtils;
@@ -47,6 +48,17 @@ public class RdmaPassiveFuture implements StorageFuture, StorageResult {
 		this.isWrite = isWrite;			
 		this.status = new AtomicInteger(RPC_PENDING);
 	}	
+	
+	@Override
+	public RetryInfo getRetryInfo() {
+		// TODO
+		return null;
+	}
+	
+	@Override
+	public void addRetryInfo(RetryInfo retryInfo) {
+		// TODO
+	}
 	
 	@Override
 	public RdmaPassiveFuture get() throws InterruptedException, ExecutionException {

@@ -25,7 +25,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.crail.CrailBuffer;
 import org.apache.crail.conf.CrailConstants;
+import org.apache.crail.core.CoreDataOperation;
+import org.apache.crail.core.CoreStream;
+import org.apache.crail.core.CoreSubOperation;
+import org.apache.crail.metadata.BlockInfo;
+import org.apache.crail.storage.RetryInfo;
+import org.apache.crail.storage.StorageFuture;
+import org.apache.crail.storage.StorageResult;
 
 public abstract class MultiFuture<R,T> implements Future<T> {
 	protected static int RPC_PENDING = 0;
@@ -37,7 +45,8 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 	private Exception exception;
 	
 	public abstract void aggregate(R obj);
-	public abstract T getAggregate();	
+	public abstract T getAggregate();
+	public abstract CoreStream getStream();
 	
 	public MultiFuture(){
 		this.pendingDataOps = new LinkedBlockingQueue<Future<R>>();
@@ -75,9 +84,38 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 		if (status.get() == RPC_PENDING){
 			try {
 				for (Future<R> dataFuture = pendingDataOps.poll(); dataFuture != null; dataFuture = pendingDataOps.poll()){
-					//R result = dataFuture.get();
-					R result = dataFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
-					this.aggregate(result);
+					try {
+						R result = dataFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
+						this.aggregate(result);
+					} catch (Exception e) {
+
+						if(dataFuture instanceof StorageFuture) {
+							do {
+								try {
+
+									// clean local caches required?
+
+									RetryInfo retryInfo = ((StorageFuture) dataFuture).getRetryInfo();
+
+									CoreSubOperation opDesc = retryInfo.getSubOperation();
+									CrailBuffer dataBuf = retryInfo.getBuffer();
+									BlockInfo block = retryInfo.retryLookup();
+
+									System.out.println("Perform StorageFuture retry for FD" + opDesc.getFd());
+
+									StorageFuture retryFuture = this.getStream().prepareAndTrigger(opDesc, dataBuf, block);
+									StorageResult retryResult = retryFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
+									((CoreDataOperation) this).aggregate(retryResult);
+									break;
+								} catch(Exception ex) {
+									Thread.sleep(1000);
+								}
+							} while(true);
+						} else {
+							R retryResult = dataFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
+							this.aggregate(retryResult);
+						}
+					}
 				}
 				completeOperation();
 			} catch (Exception e) {
@@ -106,8 +144,38 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 		if (status.get() == RPC_PENDING){
 			try {
 				for (Future<R> dataFuture = pendingDataOps.poll(); dataFuture != null; dataFuture = pendingDataOps.poll()){
-					R result = dataFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
-					this.aggregate(result);
+					try {
+						R result = dataFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
+						this.aggregate(result);
+					} catch (Exception e) {
+
+						if(dataFuture instanceof StorageFuture) {
+							do {
+								try {
+
+									// clean local caches required?
+
+									RetryInfo retryInfo = ((StorageFuture) dataFuture).getRetryInfo();
+
+									CoreSubOperation opDesc = retryInfo.getSubOperation();
+									CrailBuffer dataBuf = retryInfo.getBuffer();
+									BlockInfo block = retryInfo.retryLookup();
+
+									System.out.println("Perform StorageFuture retry for FD" + opDesc.getFd());
+
+									StorageFuture retryFuture = this.getStream().prepareAndTrigger(opDesc, dataBuf, block);
+									StorageResult retryResult = retryFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
+									((CoreDataOperation) this).aggregate(retryResult);
+									break;
+								} catch(Exception ex) {
+									Thread.sleep(1000);
+								}
+							} while(true);
+						} else {
+							R retryResult = dataFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
+							this.aggregate(retryResult);
+						}
+					}
 				}
 				completeOperation();
 			} catch (Exception e) {

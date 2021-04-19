@@ -112,7 +112,7 @@ public class CoreOutputStream extends CoreStream implements CrailOutputStream {
 	
 	// ----------------------
 	
-	StorageFuture trigger(StorageEndpoint endpoint, CoreSubOperation opDesc, CrailBuffer buffer, BlockInfo block) throws Exception {
+	public StorageFuture trigger(StorageEndpoint endpoint, CoreSubOperation opDesc, CrailBuffer buffer, BlockInfo block) throws Exception {
 		StorageFuture dataFuture = endpoint.write(buffer, block, opDesc.getBlockOffset());
 		return dataFuture;		
 	}	

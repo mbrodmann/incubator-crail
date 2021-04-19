@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.crail.conf.CrailConstants;
+import org.apache.crail.storage.RetryInfo;
 import org.apache.crail.storage.StorageFuture;
 import org.apache.crail.storage.StorageResult;
 
@@ -41,7 +42,18 @@ public class RdmaActiveFuture implements StorageFuture, StorageResult {
 		this.len = len;
 		this.isWrite = isWrite;	
 		this.status = new AtomicInteger(RPC_PENDING);
-	}	
+	}
+
+	@Override
+	public RetryInfo getRetryInfo() {
+		// TODO
+		return null;
+	}
+
+	@Override
+	public void addRetryInfo(RetryInfo retryInfo) {
+		// TODO
+	}
 	
 	public long getWrid() {
 		return wrid;

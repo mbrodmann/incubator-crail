@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.crail.storage.RetryInfo;
 import org.apache.crail.storage.StorageFuture;
 import org.apache.crail.storage.StorageResult;
 
@@ -46,6 +47,16 @@ public class RdmaLocalFuture implements StorageFuture, StorageResult {
 		this.isDone = false;
 	}
 
+	@Override
+	public RetryInfo getRetryInfo() {
+		// TODO
+		return null;
+	}
+
+	@Override
+	public void addRetryInfo(RetryInfo retryInfo) {
+		// TODO
+	}
 
 	@Override
 	public int getLen() {

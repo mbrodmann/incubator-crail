@@ -26,6 +26,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import com.sun.net.httpserver.Authenticator;
+import org.apache.crail.storage.RetryInfo;
 import org.apache.crail.storage.StorageFuture;
 import org.apache.crail.storage.StorageResult;
 import org.apache.crail.utils.TimeoutExecutor;
@@ -35,10 +37,21 @@ import com.ibm.narpc.NaRPCFuture;
 public class TcpStorageFuture implements StorageFuture, StorageResult {
 	private NaRPCFuture<TcpStorageRequest, TcpStorageResponse> future;
 	private int len;
+	public RetryInfo retryInfo;
 	
 	public TcpStorageFuture(NaRPCFuture<TcpStorageRequest, TcpStorageResponse> future, int len) {
 		this.future = future;
 		this.len = len;
+	}
+
+	@Override
+	public void addRetryInfo(RetryInfo retryInfo) {
+		this.retryInfo = retryInfo;
+	}
+
+	@Override
+	public RetryInfo getRetryInfo() {
+		return this.retryInfo;
 	}
 
 	@Override

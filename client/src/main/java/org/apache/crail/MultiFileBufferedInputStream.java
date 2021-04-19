@@ -64,11 +64,6 @@ class MultiFileBufferedInputStream extends CrailBufferedInputStream {
 	}
 
 	@Override
-	public void addStream() throws Exception {
-		// TODO
-	}
-
-	@Override
 	public void close() throws IOException {
 		super.close();
 		try {

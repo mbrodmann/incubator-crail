@@ -131,7 +131,7 @@ public class CoreInputStream extends CoreStream implements CrailInputStream {
 	
 	// --------------------------
 	
-	StorageFuture trigger(StorageEndpoint endpoint, CoreSubOperation opDesc, CrailBuffer buffer, BlockInfo block) throws Exception {
+	public StorageFuture trigger(StorageEndpoint endpoint, CoreSubOperation opDesc, CrailBuffer buffer, BlockInfo block) throws Exception {
 		StorageFuture future = endpoint.read(buffer, block, opDesc.getBlockOffset());
 		return future;
 	}	

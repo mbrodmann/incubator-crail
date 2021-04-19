@@ -121,96 +121,15 @@ public class CrailBufferedOutputStream extends OutputStream {
 				return;
 			}
 
-			while(true) {
-
-				try {
-
-					// reset variables every time
-					int offset = off;
-					int length = len;
-
-					while (length > 0){
-						CrailBuffer slice = getSlice();
-						int bufferRemaining = Math.min(length, slice.remaining());
-						slice.put(dataBuf, offset, bufferRemaining);
-						offset += bufferRemaining;
-						length -= bufferRemaining;
-						position += bufferRemaining;
-						syncSlice();
-					}
-
-					// Note this part was moved here from close() method
-					// In order to retry an entire read
-					while(!readySlices.isEmpty()){
-						CrailBuffer slice = readySlices.poll();
-						if (slice.position() > 0){
-							slice.flip();
-							Future<CrailResult> future = outputStream().write(slice);
-							pendingSlices.add(slice);
-							pendingFutures.add(future);
-						}
-					}
-
-					while(!pendingFutures.isEmpty()){
-						Future<CrailResult> future = pendingFutures.poll();
-						future.get();
-					}
-
-					while(!originalBuffers.isEmpty()){
-						CrailBuffer buffer = originalBuffers.remove();
-						crailFS.freeBuffer(buffer);
-					}
-
-					// TODO: can we keep this here or do we have to move this back to: close()
-					outputStream().close();
-
-					// finally return when all data was written without any exceptions
-					return;
-				} catch (Exception e) {
-
-					if(CrailConstants.ELASTICSTORE_LOG_RETRIES) {
-						long fd = this.outputStream.getFile().getFileInfo().getFd();
-						LOG.info("Retry outputStream.write() for FD:" + fd);
-					}
-
-					// reset metadata to contact namenode again and fetch up-to-date metadata
-
-					// TODO: resetting on a per-file basis did not work
-					// TODO: for every file with old block information it is tried again to contact old datanode
-					// TODO: poosible solution in between => delete all blocks of failing datanode ...
-					// ((CoreDataStore) fs).removeBlockCacheEntries(this.getStream().getFd());
-					// ((CoreDataStore) fs).removeNextBlockCacheEntries(this.getStream().getFd());
-
-					((CoreDataStore) crailFS).purgeCache();
-
-					while(!pendingFutures.isEmpty()){
-						Future<CrailResult> future = pendingFutures.poll();
-						try {
-							future.get();
-						} catch (Exception ex) {}
-					}
-
-					while(!originalBuffers.isEmpty()){
-						CrailBuffer buffer = originalBuffers.remove();
-						crailFS.freeBuffer(buffer);
-					}
-
-					((CoreDataStore) crailFS).purgeEndpointCache();
-
-					// close outputstream and open new
-					// TODO: can outputstream be reused?
-					this.outputStream.closeForce();
-
-					// reset file capacity to restart from beginning
-					this.file.getFileInfo().resetCapacity();
-
-					// double-check whether resetting to original values causes any problems
-					init();
-
-				}
+			while (len > 0){
+				CrailBuffer slice = getSlice();
+				int bufferRemaining = Math.min(len, slice.remaining());
+				slice.put(dataBuf, off, bufferRemaining);
+				off += bufferRemaining;
+				len -= bufferRemaining;
+				position += bufferRemaining;
+				syncSlice();
 			}
-
-
 		} catch (Exception e) {
 			throw new IOException(e);
 		}
@@ -355,9 +274,27 @@ public class CrailBufferedOutputStream extends OutputStream {
 				return;
 			}
 
-			// Note: functionality that was checking for remaining slices
-			// and completing them was moved to write() method
+			while(!readySlices.isEmpty()){
+				CrailBuffer slice = readySlices.poll();
+				if (slice.position() > 0){
+					slice.flip();
+					Future<CrailResult> future = outputStream().write(slice);
+					pendingSlices.add(slice);
+					pendingFutures.add(future);
+				}
+			}
 
+			while(!pendingFutures.isEmpty()){
+				Future<CrailResult> future = pendingFutures.poll();
+				future.get();
+			}
+
+			while(!originalBuffers.isEmpty()){
+				CrailBuffer buffer = originalBuffers.remove();
+				crailFS.freeBuffer(buffer);
+			}
+
+			outputStream().close();
 			this.crailFS.getStatistics().addProvider(statistics);
 			open = false;
 		} catch (Exception e) {

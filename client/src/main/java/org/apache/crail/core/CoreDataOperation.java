@@ -26,7 +26,7 @@ import org.apache.crail.storage.StorageResult;
 import org.apache.crail.utils.BufferCheckpoint;
 import org.apache.crail.utils.MultiFuture;
 
-class CoreDataOperation extends MultiFuture<StorageResult, CrailResult> implements CrailResult {
+public class CoreDataOperation extends MultiFuture<StorageResult, CrailResult> implements CrailResult {
 	private CoreStream stream;
 	private CrailBuffer buffer;
 	private long fileOffset;
@@ -104,7 +104,12 @@ class CoreDataOperation extends MultiFuture<StorageResult, CrailResult> implemen
 		if (dataFuture.isSynchronous()){
 			this.isSynchronous = true;
 		}
-	}	
+	}
+
+	@Override
+	public CoreStream getStream() {
+		return this.stream;
+	}
 	
 	//-----------
 	

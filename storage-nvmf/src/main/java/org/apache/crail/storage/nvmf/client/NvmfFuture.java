@@ -19,6 +19,7 @@
 package org.apache.crail.storage.nvmf.client;
 
 import com.ibm.jnvmf.*;
+import org.apache.crail.storage.RetryInfo;
 import org.apache.crail.storage.StorageFuture;
 import org.apache.crail.storage.StorageResult;
 
@@ -48,6 +49,17 @@ public class NvmfFuture<Command extends NvmIoCommand<? extends NvmIoCommandCapsu
 		this.storageResult = () -> length;
 		this.response = response;
 		this.completed = new AtomicInteger(0);
+	}
+
+	@Override
+	public RetryInfo getRetryInfo() {
+		// TODO
+		return null;
+	}
+
+	@Override
+	public void addRetryInfo(RetryInfo retryInfo) {
+		// TODO
 	}
 
 	@Override

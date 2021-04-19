@@ -26,34 +26,32 @@ import java.util.LinkedList;
 import java.util.concurrent.Future;
 
 import org.apache.crail.conf.CrailConstants;
-import org.apache.crail.core.CoreDataStore;
 import org.apache.crail.utils.CrailUtils;
 import org.apache.crail.utils.RingBuffer;
 import org.slf4j.Logger;
 
 public abstract class CrailBufferedInputStream extends InputStream {
 	private static final Logger LOG = CrailUtils.getLogger();
-	
+
 	private CrailStore fs;
 	private byte[] tmpByteBuf;
 	private ByteBuffer tmpBoundaryBuffer;
 	private LinkedList<CrailBuffer> originalBuffers;
-	private RingBuffer<CrailBuffer> readySlices;
-	private RingBuffer<CrailBuffer> pendingSlices;
-	private RingBuffer<Future<CrailResult>> pendingFutures;	
+	public RingBuffer<CrailBuffer> readySlices;
+	public RingBuffer<CrailBuffer> pendingSlices;
+	private RingBuffer<Future<CrailResult>> pendingFutures;
 	private RingBuffer<CrailBuffer> freeSlices;
 	private RingBuffer<CrailBuffer> tmpSlices;
-	private long position;
-	private boolean open;
+	public long position;
+	public boolean open;
 	private CrailBufferedStatistics statistics;
 	private int actualSliceSize;
 	private long capacity;
 	private int queueDepth;
-	
+
 	public abstract CrailInputStream getStream() throws Exception;
 	public abstract void putStream() throws Exception;
-	public abstract void addStream() throws Exception;
-	
+
 	CrailBufferedInputStream(CrailStore fs, int queueDepth, long capacity) throws Exception {
 		this.fs = fs;
 		this.capacity = capacity;
@@ -64,7 +62,6 @@ public abstract class CrailBufferedInputStream extends InputStream {
 	}
 
 	public void init() throws Exception {
-		// TODO: check how this has to be adapted in combination with "seek" operation
 		this.position = 0;
 		this.tmpByteBuf = new byte[1];
 		this.tmpBoundaryBuffer = ByteBuffer.allocate(8);
@@ -100,17 +97,17 @@ public abstract class CrailBufferedInputStream extends InputStream {
 		}
 		this.open = true;
 	}
-	
-	public final int read() throws IOException {
+
+	public int read() throws IOException {
 		int ret = read(tmpByteBuf);
 		return (ret <= 0) ? -1 : (tmpByteBuf[0] & 0xff);
 	}
-	
-    public final int read(byte b[]) throws IOException {
-        return read(b, 0, b.length);
-    }	
 
-	public final int read(long position, byte[] buffer, int offset, int length) throws IOException {
+	public int read(byte b[]) throws IOException {
+		return read(b, 0, b.length);
+	}
+
+	public int read(long position, byte[] buffer, int offset, int length) throws IOException {
 		long oldPos = position();
 		int nread = -1;
 		try {
@@ -121,102 +118,53 @@ public abstract class CrailBufferedInputStream extends InputStream {
 		}
 		return nread;
 	}
-	
+
 	@Override
-	public final int read(byte[] buf, int off, int len) throws IOException {
+	public int read(byte[] buf, int off, int len) throws IOException {
 		try {
 			if (buf == null) {
 				throw new NullPointerException();
 			} else if (off < 0 || len < 0 || len > buf.length - off) {
 				throw new IndexOutOfBoundsException("off " + off + ", len " + len + ", length " + buf.length);
-			} else if (!open) { 
+			} else if (!open) {
 				throw new IOException("strem closed");
 			} else if (len == 0) {
 				return 0;
 			}
 
-			// try until read operation succeeds
-			// catch clause will reset metadata ==> in case a block was moved in the meanwhile
-			// TODO: add max no. of retries
-			while(true) {
-
-				try {
-					// reset variables every time
-					int sumLen = 0;
-					int offset = off;
-					int length = len;
-
-					// double-check whether resetting to original values causes any problems
-					init();
-
-					while (length > 0) {
-						CrailBuffer slice = getSlice(true);
-						if (slice == null){
-							break;
-						}
-						int bufferRemaining = Math.min(length, slice.remaining());
-						slice.get(buf, offset, bufferRemaining);
-						length -= bufferRemaining;
-						offset += bufferRemaining;
-						sumLen += bufferRemaining;
-						position += bufferRemaining;
-						syncSlice();
-					}
-
-					if (sumLen > 0){
-						return sumLen;
-					} else if (readySlices.size() + pendingSlices.size() > 0){
-						return 0;
-					} else {
-						return -1;
-					}
-				} catch (Exception e) {
-
-					if(CrailConstants.ELASTICSTORE_LOG_RETRIES) {
-						LOG.info("Retry inputStream.read() for FD:" + this.getStream().getFd());
-					}
-
-					// reset metadata to contact namenode again and fetch up-to-date metadata
-
-					// TODO: resetting on a per-file basis did not work
-					// TODO: for every file with old block information it is tried again to contact old datanode
-					// TODO: poosible solution in between => delete all blocks of failing datanode ...
-					// ((CoreDataStore) fs).removeBlockCacheEntries(this.getStream().getFd());
-					// ((CoreDataStore) fs).removeNextBlockCacheEntries(this.getStream().getFd());
-
-					((CoreDataStore) fs).purgeCache();
-
-					while(!pendingFutures.isEmpty()){
-						Future<CrailResult> future = pendingFutures.poll();
-						try {
-							future.get();
-						} catch (Exception ex) {}
-					}
-
-					while(!originalBuffers.isEmpty()){
-						CrailBuffer buffer = originalBuffers.remove();
-						fs.freeBuffer(buffer);
-					}
-
-					// close inputstream and open new
-					// TODO: can inputstream be reused?
-					((CoreDataStore) fs).purgeEndpointCache();
-					this.getStream().closeForce();
-					addStream();
+			int sumLen = 0;
+			while (len > 0) {
+				CrailBuffer slice = getSlice(true);
+				if (slice == null){
+					break;
 				}
+				int bufferRemaining = Math.min(len, slice.remaining());
+				slice.get(buf, off, bufferRemaining);
+				len -= bufferRemaining;
+				off += bufferRemaining;
+				sumLen += bufferRemaining;
+				position += bufferRemaining;
+				syncSlice();
+			}
+			if (sumLen > 0){
+				return sumLen;
+			} else if (readySlices.size() + pendingSlices.size() > 0){
+				return 0;
+			} else {
+				return -1;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new IOException(e);
 		}
 	}
-	
+
 	public final int read(ByteBuffer dataBuf) throws IOException {
 		try {
 			if (dataBuf == null) {
 				throw new NullPointerException();
-			} else if (!open) { 
-				throw new IOException("strem closed");
+			} else if (!open) {
+				throw new IOException("stream closed");
 			} else if (dataBuf.remaining() == 0) {
 				return 0;
 			}
@@ -227,14 +175,14 @@ public abstract class CrailBufferedInputStream extends InputStream {
 				CrailBuffer slice = getSlice(true);
 				if (slice == null){
 					break;
-				}				
+				}
 				int bufferRemaining = Math.min(len, slice.remaining());
 				int oldLimit = slice.limit();
 				slice.limit(slice.position() + bufferRemaining);
 				dataBuf.put(slice.getByteBuffer());
 				slice.limit(oldLimit);
 				len -= bufferRemaining;
-				sumLen += bufferRemaining;	
+				sumLen += bufferRemaining;
 				position += bufferRemaining;
 				syncSlice();
 			}
@@ -244,13 +192,13 @@ public abstract class CrailBufferedInputStream extends InputStream {
 				return 0;
 			} else {
 				return -1;
-			}			
+			}
 		} catch (Exception e) {
 			throw new IOException(e);
 		}
-		
+
 	}
-	
+
 	public final double readDouble() throws Exception {
 		CrailBuffer slice = getSlice(true);
 		if (slice == null){
@@ -288,12 +236,12 @@ public abstract class CrailBufferedInputStream extends InputStream {
 			return tmpBoundaryBuffer.getFloat();
 		}
 	}
-	
+
 	public final int readInt() throws Exception {
 		CrailBuffer slice = getSlice(true);
 		if (slice == null){
 			throw new EOFException();
-		}		
+		}
 		if (slice.remaining() >= Integer.BYTES){
 			int val = slice.getInt();
 			position += Integer.BYTES;
@@ -307,12 +255,12 @@ public abstract class CrailBufferedInputStream extends InputStream {
 			return tmpBoundaryBuffer.getInt();
 		}
 	}
-	
+
 	public final long readLong() throws Exception {
 		CrailBuffer slice = getSlice(true);
 		if (slice == null){
 			throw new EOFException();
-		}		
+		}
 		if (slice.remaining() >= Long.BYTES){
 			long val = slice.getLong();
 			position += Long.BYTES;
@@ -326,12 +274,12 @@ public abstract class CrailBufferedInputStream extends InputStream {
 			return tmpBoundaryBuffer.getLong();
 		}
 	}
-	
+
 	public final short readShort() throws Exception {
 		CrailBuffer slice = getSlice(true);
 		if (slice == null){
 			throw new EOFException();
-		}		
+		}
 		if (slice.remaining() >= Short.BYTES){
 			short val = slice.getShort();
 			position += Short.BYTES;
@@ -344,32 +292,32 @@ public abstract class CrailBufferedInputStream extends InputStream {
 			tmpBoundaryBuffer.flip();
 			return tmpBoundaryBuffer.getShort();
 		}
-	}		
-	
+	}
+
 	@Override
 	public void close() throws IOException {
 		try {
 			if (!open){
 				return;
 			}
-			
+
 			while(!pendingFutures.isEmpty()){
 				Future<CrailResult> future = pendingFutures.poll();
 				future.get();
 			}
-			
+
 			while(!originalBuffers.isEmpty()){
 				CrailBuffer buffer = originalBuffers.remove();
 				fs.freeBuffer(buffer);
 			}
-			
+
 			this.fs.getStatistics().addProvider(statistics);
 			open = false;
 		} catch (Exception e) {
 			throw new IOException(e);
 		}
 	}
-	
+
 	@Override
 	public long skip(long n) throws IOException {
 		if (n <= 0) {
@@ -386,16 +334,16 @@ public abstract class CrailBufferedInputStream extends InputStream {
 			throw new IOException("Error in skip operation");
 		}
 	}
-	
+
 	public void seek(long pos) throws IOException {
 		try {
 			if (pos >= capacity){
 				return;
-			} 
+			}
 			if (pos == position){
 				return;
 			}
-			
+
 			long startPosition = CrailUtils.bufferStartAddress(position, actualSliceSize);
 			long endPosition = startPosition + (readySlices.size() + pendingSlices.size())*actualSliceSize;
 			if (pos >= startPosition && pos < endPosition){
@@ -417,7 +365,7 @@ public abstract class CrailBufferedInputStream extends InputStream {
 				while(!tmpSlices.isEmpty()){
 					triggerRead(tmpSlices.poll());
 				}
-				this.position = pos;				
+				this.position = pos;
 				CrailBuffer slice = getSlice(true);
 				long bufPosition = pos - currentPosition;
 				slice.position((int) bufPosition);
@@ -427,7 +375,7 @@ public abstract class CrailBufferedInputStream extends InputStream {
 				tmpSlices.clear();
 				while(!freeSlices.isEmpty()){
 					tmpSlices.add(freeSlices.poll());
-				}				
+				}
 				while(!readySlices.isEmpty()){
 					tmpSlices.add(readySlices.poll());
 				}
@@ -438,8 +386,8 @@ public abstract class CrailBufferedInputStream extends InputStream {
 				}
 				while(!tmpSlices.isEmpty()){
 					triggerRead(tmpSlices.poll());
-				}				
-				this.position = pos;				
+				}
+				this.position = pos;
 				CrailBuffer slice = getSlice(true);
 				long bufPosition = pos - sliceStart;
 				slice.position((int) bufPosition);
@@ -448,7 +396,7 @@ public abstract class CrailBufferedInputStream extends InputStream {
 			e.printStackTrace();
 			throw new IOException("position " + position + ", pos " + pos + ", free " + freeSlices.size() + ", ready " + readySlices.size() + ", pending " + pendingSlices.size() + ", capacity " + capacity + ", exception " + e);
 		}
-	}	
+	}
 
 	public int available() {
 		try {
@@ -467,10 +415,10 @@ public abstract class CrailBufferedInputStream extends InputStream {
 	public long position() {
 		return position;
 	}
-	
-	//---------------------- ByteBuffer interface 
-	
-	private CrailBuffer getSlice(boolean blocking) throws Exception {
+
+	//---------------------- ByteBuffer interface
+
+	public CrailBuffer getSlice(boolean blocking) throws Exception {
 		CrailBuffer slice = readySlices.peek();
 		if (slice == null){
 			Future<CrailResult> future = pendingFutures.peek();
@@ -497,22 +445,22 @@ public abstract class CrailBufferedInputStream extends InputStream {
 					readySlices.add(slice);
 				} else {
 					slice = null;
-				}					
+				}
 			} else {
 				slice = null;
 			}
-		} 
-		return slice;		
+		}
+		return slice;
 	}
 
-	private void syncSlice() throws Exception {
+	public void syncSlice() throws Exception {
 		CrailBuffer slice = readySlices.peek();
 		if (slice != null && slice.remaining() == 0){
 			slice = readySlices.poll();
 			triggerRead(slice);
-		}		
+		}
 	}
-	
+
 	private void triggerRead(CrailBuffer slice) throws Exception {
 		slice.clear();
 		CrailInputStream inputStream = getStream();
@@ -527,5 +475,6 @@ public abstract class CrailBufferedInputStream extends InputStream {
 			putStream();
 		}
 	}
-	
+
 }
+

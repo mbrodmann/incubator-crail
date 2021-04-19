@@ -20,6 +20,7 @@ package org.apache.crail.storage.nvmf.client;
 
 import org.apache.crail.CrailBuffer;
 import org.apache.crail.metadata.BlockInfo;
+import org.apache.crail.storage.RetryInfo;
 import org.apache.crail.storage.StorageFuture;
 import org.apache.crail.storage.StorageResult;
 
@@ -36,6 +37,17 @@ public class NvmfUnalignedWriteFuture implements StorageFuture {
 	private final int written;
 	private NvmfStagingBufferCache.BufferCacheEntry beginBuffer;
 	private NvmfStagingBufferCache.BufferCacheEntry endBuffer;
+
+	@Override
+	public RetryInfo getRetryInfo() {
+		// TODO
+		return null;
+	}
+
+	@Override
+	public void addRetryInfo(RetryInfo retryInfo) {
+		// TODO
+	}
 
 	private final boolean isSectorAligned(long address) {
 		return address % endpoint.getLBADataSize() == 0;

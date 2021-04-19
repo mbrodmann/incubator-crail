@@ -45,11 +45,6 @@ class FileBufferedInputStream extends CrailBufferedInputStream {
 	}
 
 	@Override
-	public void addStream() throws Exception {
-		this.inputStream = file.getDirectInputStream(readHint);
-	}
-
-	@Override
 	public void close() throws IOException {
 		super.close();
 		try {

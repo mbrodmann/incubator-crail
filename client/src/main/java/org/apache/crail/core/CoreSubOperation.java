@@ -49,6 +49,10 @@ public class CoreSubOperation {
 		return fd;
 	}
 
+	public long getFileOffset() {
+		return fileOffset;
+	}
+
 	public long getBlockOffset() {
 		return blockOffset;
 	}

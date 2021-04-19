@@ -21,8 +21,7 @@ package org.apache.crail.core;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import org.apache.crail.CrailBuffer;
 import org.apache.crail.conf.CrailConstants;
@@ -32,13 +31,16 @@ import org.apache.crail.rpc.RpcConnection;
 import org.apache.crail.rpc.RpcErrors;
 import org.apache.crail.rpc.RpcFuture;
 import org.apache.crail.rpc.RpcGetBlock;
+import org.apache.crail.storage.RetryInfo;
 import org.apache.crail.storage.StorageEndpoint;
 import org.apache.crail.storage.StorageFuture;
+import org.apache.crail.storage.TriggerCall;
 import org.apache.crail.utils.BufferCheckpoint;
 import org.apache.crail.utils.CrailUtils;
 import org.apache.crail.utils.EndpointCache;
 import org.apache.crail.utils.BlockCache.FileBlockCache;
 import org.apache.crail.utils.NextBlockCache.FileNextBlockCache;
+import org.apache.crail.utils.TimeoutExecutor;
 import org.slf4j.Logger;
 
 public abstract class CoreStream {
@@ -60,7 +62,7 @@ public abstract class CoreStream {
 	private HashMap<Integer, CoreSubOperation> blockMap;
 	private LinkedList<RpcFuture<RpcGetBlock>> pendingBlocks;
 
-	abstract StorageFuture trigger(StorageEndpoint endpoint, CoreSubOperation opDesc, CrailBuffer buffer, BlockInfo block) throws Exception;
+	public abstract StorageFuture trigger(StorageEndpoint endpoint, CoreSubOperation opDesc, CrailBuffer buffer, BlockInfo block) throws Exception;
 	abstract void update(long newCapacity);
 
 	CoreStream(CoreNode node, long streamId, long fileOffset) throws Exception {
@@ -225,25 +227,48 @@ public abstract class CoreStream {
 		return blockRemaining;
 	}
 
-	private StorageFuture prepareAndTrigger(CoreSubOperation opDesc, CrailBuffer dataBuf, BlockInfo block) throws Exception {
-		try {
-			StorageEndpoint endpoint = endpointCache.getDataEndpoint(block.getDnInfo());
-			dataBuf.clear();
-			dataBuf.position(opDesc.getBufferPosition());
+	public StorageFuture prepareAndTrigger(CoreSubOperation opDesc, CrailBuffer dataBuf, BlockInfo block) throws Exception {
 
-			// TODO: there is probably a much better way of figuring this out ...
-			int limit = dataBuf.position() + opDesc.getLen();
-			block.setLimit(limit);
-			dataBuf.limit(limit);
+		RetryInfo retryInfo = new RetryInfo(namenodeClientRpc);
+		retryInfo.setCoreSubOperation(opDesc.getFd(), opDesc.getFileOffset(), opDesc.getBufferPosition(), opDesc.getLen());
+		retryInfo.setBuffer(dataBuf);
+		retryInfo.setBlockInfo(fileInfo.getFd(), fileInfo.getToken(), position, fileInfo.getCapacity());
+		
+		BlockInfo currentBlock;
+		
+		do {
+			try {
+				
+				if(retryInfo.getBlockInfo() != null) {
+					currentBlock = retryInfo.getBlockInfo();
+				} else {
+					currentBlock = block;
+				}
 
-			StorageFuture subFuture = trigger(endpoint, opDesc, dataBuf, block);
-			incStats(endpoint.isLocal());
-			return subFuture;
-		} catch(IOException e){
-			//LOG.info("ERROR: failed data operation");
-			//e.printStackTrace();
-			throw e;
-		}
+				// add retryInformation to storageFuture
+				StorageEndpoint endpoint = endpointCache.getDataEndpoint(currentBlock.getDnInfo());
+				dataBuf.clear();
+				dataBuf.position(opDesc.getBufferPosition());
+
+				// TODO: there is probably a much better way of figuring this out ...
+				int limit = dataBuf.position() + opDesc.getLen();
+				currentBlock.setLimit(limit);
+				dataBuf.limit(limit);
+
+				TriggerCall task = new TriggerCall(endpoint, opDesc, dataBuf, currentBlock, this);
+				
+				Future<StorageFuture> timeout_future = TimeoutExecutor.executorService.submit(task);
+				StorageFuture subFuture =  timeout_future.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
+				
+				subFuture.addRetryInfo(retryInfo);
+				incStats(endpoint.isLocal());
+				return subFuture;
+			} catch(Exception e){
+				System.out.println("Perform trigger StorageFuture retry for FD" + opDesc.getFd());
+				retryInfo.retryLookup();
+				//throw e;
+			}	
+		} while(true);
 	}
 
 	private void incStats(boolean isLocal){
