@@ -259,7 +259,11 @@ public abstract class CoreStream {
 				incStats(endpoint.isLocal());
 				return subFuture;
 			} catch(Exception e){
-				System.out.println("Perform trigger StorageFuture retry for FD" + opDesc.getFd());
+				
+				if(CrailConstants.ELASTICSTORE_LOG_RETRIES) {
+					LOG.info("Perform trigger StorageFuture retry for FD" + opDesc.getFd());
+				}
+				
 				fs.removeBlockCacheEntries(fileInfo.getFd());
 				fs.removeNextBlockCacheEntries(fileInfo.getFd());
 				retryInfo.retryLookup();

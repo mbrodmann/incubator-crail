@@ -101,7 +101,9 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 									CrailBuffer dataBuf = retryInfo.getBuffer();
 									BlockInfo block = retryInfo.retryLookup();
 
-									System.out.println("Perform StorageFuture retry for FD" + opDesc.getFd());
+									if(CrailConstants.ELASTICSTORE_LOG_RETRIES) {
+										System.out.println("Perform StorageFuture retry for FD" + opDesc.getFd());
+									}
 
 									StorageFuture retryFuture = this.getStream().prepareAndTrigger(opDesc, dataBuf, block);
 									StorageResult retryResult = retryFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
@@ -161,7 +163,9 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 									CrailBuffer dataBuf = retryInfo.getBuffer();
 									BlockInfo block = retryInfo.retryLookup();
 
-									System.out.println("Perform StorageFuture retry for FD" + opDesc.getFd());
+									if(CrailConstants.ELASTICSTORE_LOG_RETRIES) {
+										System.out.println("Perform StorageFuture retry for FD" + opDesc.getFd());
+									}
 
 									StorageFuture retryFuture = this.getStream().prepareAndTrigger(opDesc, dataBuf, block);
 									StorageResult retryResult = retryFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
