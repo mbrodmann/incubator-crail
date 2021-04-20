@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.crail.CrailBuffer;
 import org.apache.crail.conf.CrailConstants;
 import org.apache.crail.core.CoreDataOperation;
+import org.apache.crail.core.CoreDataStore;
 import org.apache.crail.core.CoreStream;
 import org.apache.crail.core.CoreSubOperation;
 import org.apache.crail.metadata.BlockInfo;
@@ -90,13 +91,13 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 					} catch (Exception e) {
 
 						if(dataFuture instanceof StorageFuture) {
+
+							RetryInfo retryInfo = ((StorageFuture) dataFuture).getRetryInfo();
+							
 							do {
 								try {
 
 									// clean local caches required?
-
-									RetryInfo retryInfo = ((StorageFuture) dataFuture).getRetryInfo();
-
 									CoreSubOperation opDesc = retryInfo.getSubOperation();
 									CrailBuffer dataBuf = retryInfo.getBuffer();
 									BlockInfo block = retryInfo.retryLookup();
@@ -110,7 +111,9 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 									((CoreDataOperation) this).aggregate(retryResult);
 									break;
 								} catch(Exception ex) {
-									Thread.sleep(1000);
+									getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
+									getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
+									retryInfo.retryLookup();
 								}
 							} while(true);
 						} else {
@@ -152,13 +155,13 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 					} catch (Exception e) {
 
 						if(dataFuture instanceof StorageFuture) {
+
+							RetryInfo retryInfo = ((StorageFuture) dataFuture).getRetryInfo();
+							
 							do {
 								try {
 
-									// clean local caches required?
-
-									RetryInfo retryInfo = ((StorageFuture) dataFuture).getRetryInfo();
-
+									// clean local caches required
 									CoreSubOperation opDesc = retryInfo.getSubOperation();
 									CrailBuffer dataBuf = retryInfo.getBuffer();
 									BlockInfo block = retryInfo.retryLookup();
@@ -172,7 +175,9 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 									((CoreDataOperation) this).aggregate(retryResult);
 									break;
 								} catch(Exception ex) {
-									Thread.sleep(1000);
+									getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
+									getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
+									retryInfo.retryLookup();
 								}
 							} while(true);
 						} else {

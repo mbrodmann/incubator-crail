@@ -44,6 +44,10 @@ public class RetryInfo {
         this.position = position;
         this.syncedCapacity = syncedCapacity;
     }
+    
+    public long getFd() {
+        return this.fd;
+    }
 
     public CoreSubOperation getSubOperation() {
         return this.subOperation;

@@ -44,7 +44,7 @@ import org.slf4j.Logger;
 public abstract class CoreStream {
 	private static final Logger LOG = CrailUtils.getLogger();
 
-	protected CoreDataStore fs;
+	public CoreDataStore fs;
 	protected CoreNode node;
 
 	private EndpointCache endpointCache;
