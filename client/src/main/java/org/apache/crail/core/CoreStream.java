@@ -34,13 +34,11 @@ import org.apache.crail.rpc.RpcGetBlock;
 import org.apache.crail.storage.RetryInfo;
 import org.apache.crail.storage.StorageEndpoint;
 import org.apache.crail.storage.StorageFuture;
-import org.apache.crail.storage.TriggerCall;
 import org.apache.crail.utils.BufferCheckpoint;
 import org.apache.crail.utils.CrailUtils;
 import org.apache.crail.utils.EndpointCache;
 import org.apache.crail.utils.BlockCache.FileBlockCache;
 import org.apache.crail.utils.NextBlockCache.FileNextBlockCache;
-import org.apache.crail.utils.TimeoutExecutor;
 import org.slf4j.Logger;
 
 public abstract class CoreStream {
@@ -254,19 +252,17 @@ public abstract class CoreStream {
 				int limit = dataBuf.position() + opDesc.getLen();
 				currentBlock.setLimit(limit);
 				dataBuf.limit(limit);
-
-				TriggerCall task = new TriggerCall(endpoint, opDesc, dataBuf, currentBlock, this);
 				
-				Future<StorageFuture> timeout_future = TimeoutExecutor.executorService.submit(task);
-				StorageFuture subFuture =  timeout_future.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
+				StorageFuture subFuture = trigger(endpoint, opDesc, dataBuf, currentBlock);
 				
 				subFuture.addRetryInfo(retryInfo);
 				incStats(endpoint.isLocal());
 				return subFuture;
 			} catch(Exception e){
 				System.out.println("Perform trigger StorageFuture retry for FD" + opDesc.getFd());
+				fs.removeBlockCacheEntries(fileInfo.getFd());
+				fs.removeNextBlockCacheEntries(fileInfo.getFd());
 				retryInfo.retryLookup();
-				//throw e;
 			}	
 		} while(true);
 	}
