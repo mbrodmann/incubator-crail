@@ -6,7 +6,7 @@ import java.util.concurrent.Executors;
 public class TimeoutExecutor {
     
     // TODO: check whether cachedThreadPool is better choice
-    public static final ExecutorService executorService = Executors.newFixedThreadPool(16);
+    public static final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     TimeoutExecutor() {}
 }

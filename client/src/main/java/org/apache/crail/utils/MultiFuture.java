@@ -113,7 +113,7 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 								} catch(Exception ex) {
 									getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
 									getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
-									retryInfo.retryLookup();
+									Thread.sleep(1000);
 								}
 							} while(true);
 						} else {
@@ -177,7 +177,7 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 								} catch(Exception ex) {
 									getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
 									getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
-									retryInfo.retryLookup();
+									Thread.sleep(1000);
 								}
 							} while(true);
 						} else {
