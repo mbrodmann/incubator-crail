@@ -71,6 +71,12 @@ public class EndpointCache implements CrailStatistics.StatisticsProvider {
 //		return storageCaches.get(dataNodeInfo.getStorageType()).getDataEndpoint(dataNodeInfo);
 	}
 
+	public void removeEndpoint(long key) throws Exception {
+		for(StorageEndpointCache endpointCache: storageCaches.values()) {
+			endpointCache.removeEndpoint(key);;
+		}
+	}
+
 	public void purgeEndpointCaches() throws Exception {
 		for(StorageEndpointCache endpointCache: storageCaches.values()) {
 			endpointCache.purgeEndpointCache();
@@ -151,6 +157,10 @@ public class EndpointCache implements CrailStatistics.StatisticsProvider {
 		public void purgeEndpointCache() {
 			this.cache.clear();
 			this.locktable.clear();
+		}
+
+		public void removeEndpoint(long key) {
+			this.cache.remove(key);
 		}
 
 		public int size() {

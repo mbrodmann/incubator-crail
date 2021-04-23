@@ -232,15 +232,13 @@ public abstract class CoreStream {
 		retryInfo.setBuffer(dataBuf);
 		retryInfo.setBlockInfo(fileInfo.getFd(), fileInfo.getToken(), position, fileInfo.getCapacity());
 		
-		BlockInfo currentBlock;
+		BlockInfo currentBlock = block;
 		
 		do {
 			try {
 				
 				if(retryInfo.getBlockInfo() != null) {
 					currentBlock = retryInfo.getBlockInfo();
-				} else {
-					currentBlock = block;
 				}
 
 				// add retryInformation to storageFuture
@@ -266,6 +264,7 @@ public abstract class CoreStream {
 				
 				fs.removeBlockCacheEntries(fileInfo.getFd());
 				fs.removeNextBlockCacheEntries(fileInfo.getFd());
+				//fs.getDatanodeEndpointCache().removeEndpoint(currentBlock.getDnInfo().key());
 				retryInfo.retryLookup();
 			}	
 		} while(true);

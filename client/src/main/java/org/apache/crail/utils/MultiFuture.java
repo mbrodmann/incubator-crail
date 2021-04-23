@@ -60,9 +60,48 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 			try {
 				Future<R> dataFuture = pendingDataOps.peek();
 				while (dataFuture != null && dataFuture.isDone()) {
-					dataFuture = pendingDataOps.poll();
-					R result = dataFuture.get();
-					this.aggregate(result);
+					
+					try {
+						dataFuture = pendingDataOps.poll();
+						R result = dataFuture.get();
+						this.aggregate(result);	
+					} catch (Exception e) {
+						
+						if(dataFuture instanceof StorageFuture) {
+							
+							RetryInfo retryInfo = ((StorageFuture) dataFuture).getRetryInfo();
+
+							do {
+								try {
+
+									// clean local caches required?
+									CoreSubOperation opDesc = retryInfo.getSubOperation();
+									CrailBuffer dataBuf = retryInfo.getBuffer();
+									BlockInfo block = retryInfo.retryLookup();
+
+									if(CrailConstants.ELASTICSTORE_LOG_RETRIES) {
+										System.out.println("Perform StorageFuture retry for FD" + opDesc.getFd());
+									}
+
+									StorageFuture retryFuture = this.getStream().prepareAndTrigger(opDesc, dataBuf, block);
+									StorageResult retryResult = retryFuture.get(CrailConstants.DATA_TIMEOUT, TimeUnit.MILLISECONDS);
+									((CoreDataOperation) this).aggregate(retryResult);
+									break;
+								} catch(Exception ex) {
+									getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
+									getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
+									getStream().fs.getDatanodeEndpointCache().removeEndpoint(retryInfo.getBlockInfo().getDnInfo().key());
+									Thread.sleep(1000);
+								}
+							} while(true);
+							
+							
+						} else {
+							System.out.println("TODO: implement");
+						}
+					}
+					
+					
 					dataFuture = pendingDataOps.peek();
 				}
 				if (pendingDataOps.isEmpty() && status.get() == RPC_PENDING) {
@@ -73,9 +112,9 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 				this.exception = e;
 			}
 		}
-		
+
 		return status.get() > 0;
-	}	
+	}
 	
 	public synchronized T get() throws InterruptedException, ExecutionException {
 		if (this.exception != null){
@@ -113,6 +152,7 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 								} catch(Exception ex) {
 									getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
 									getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
+									//getStream().fs.getDatanodeEndpointCache().removeEndpoint(retryInfo.getBlockInfo().getDnInfo().key());
 									Thread.sleep(1000);
 								}
 							} while(true);
@@ -177,6 +217,7 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 								} catch(Exception ex) {
 									getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
 									getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
+									//getStream().fs.getDatanodeEndpointCache().removeEndpoint(retryInfo.getBlockInfo().getDnInfo().key());
 									Thread.sleep(1000);
 								}
 							} while(true);
