@@ -5,7 +5,7 @@ import java.util.concurrent.Executors;
 
 public class TimeoutExecutor {
     
-    // TODO: check whether cachedThreadPool is better choice
+    // was replaced by using selector.select(1000) in nio
     public static final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     TimeoutExecutor() {}

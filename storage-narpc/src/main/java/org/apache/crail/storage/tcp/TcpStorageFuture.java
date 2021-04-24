@@ -30,7 +30,6 @@ import com.sun.net.httpserver.Authenticator;
 import org.apache.crail.storage.RetryInfo;
 import org.apache.crail.storage.StorageFuture;
 import org.apache.crail.storage.StorageResult;
-import org.apache.crail.utils.TimeoutExecutor;
 
 import com.ibm.narpc.NaRPCFuture;
 
@@ -87,34 +86,7 @@ public class TcpStorageFuture implements StorageFuture, StorageResult {
 	public StorageResult get(long timeout, TimeUnit unit)
 			throws InterruptedException, ExecutionException, TimeoutException {
 
-		Callable<Object> task = new Callable<Object>() {
-			public Object call() throws InterruptedException, ExecutionException, TimeoutException {
-				
-				// try {
-				// 	Object res =  future.get(timeout, unit);
-				
-				// 	if(Thread.currentThread().isInterrupted()) {
-				// 		System.out.println("Interrupted ...");
-				// 	}
-
-				// 	return res;
-				// } catch(Exception e) {
-				// 	System.out.println("Catched interruption ...");
-				// 	throw e;
-				// }
-
-				return future.get(timeout, unit);
-				
-			}
-		 };
-
-		Future<Object> timeout_future = TimeoutExecutor.executorService.submit(task);
-		try {
-			timeout_future.get(timeout, unit);
-		} catch(Exception e) {
-			//timeout_future.cancel(true);
-			throw e;
-		}
+		future.get(timeout, unit);
 
 		if(future.getResponse().getWriteResponse() != null) {
 			int size = future.get().getWriteResponse().size();
