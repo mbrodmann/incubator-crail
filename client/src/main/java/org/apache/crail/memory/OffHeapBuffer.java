@@ -31,7 +31,7 @@ public class OffHeapBuffer implements CrailBuffer {
 	private ByteBuffer buffer;
 	private long address;
 	
-	OffHeapBuffer(ByteBuffer buffer) {
+	public OffHeapBuffer(ByteBuffer buffer) {
 		this.region = this;
 		this.buffer = buffer;
 		this.address = CrailUtils.getAddress(buffer);

@@ -24,14 +24,23 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Paths;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.apache.crail.CrailBuffer;
+import org.apache.crail.CrailStore;
 import org.apache.crail.conf.CrailConfiguration;
 import org.apache.crail.conf.CrailConstants;
-import org.apache.crail.storage.StorageResource;
-import org.apache.crail.storage.StorageRpcClient;
-import org.apache.crail.storage.StorageServer;
-import org.apache.crail.storage.StorageUtils;
+import org.apache.crail.core.CoreDataStore;
+import org.apache.crail.memory.OffHeapBuffer;
+import org.apache.crail.metadata.BlockInfo;
+import org.apache.crail.metadata.DataNodeInfo;
+import org.apache.crail.metadata.RelocationBlockInfo;
+import org.apache.crail.rpc.RpcClient;
+import org.apache.crail.rpc.RpcConnection;
+import org.apache.crail.rpc.RpcDispatcher;
+import org.apache.crail.storage.*;
 import org.apache.crail.utils.CrailUtils;
 import org.slf4j.Logger;
 
@@ -53,6 +62,13 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 	private String dataDirPath;
 	private boolean relocationOngoing;
 
+	// WIP: direct data transfer from DN to DN
+	private CrailStore store;
+	private CrailConfiguration conf;
+	private StorageClient storageClient;
+	private RpcConnection rpcConnection;
+
+
 	@Override
 	public void init(CrailConfiguration conf, String[] args) throws Exception {
 		TcpStorageConstants.init(conf, args);
@@ -68,6 +84,28 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 		this.dataDirPath = StorageUtils.getDatanodeDirectory(TcpStorageConstants.STORAGE_TCP_DATA_PATH, address);
 		this.relocationOngoing = false;
 		StorageUtils.clean(TcpStorageConstants.STORAGE_TCP_DATA_PATH, dataDirPath);
+
+		// WIP: DN to DN transer
+		this.conf = CrailConfiguration.createConfigurationFromFile();
+		this.store = store = CrailStore.newInstance(conf);
+		storageClient = StorageClient.createInstance(conf.get("crail.storage.types"));
+		storageClient.init(store.getStatistics(), ((CoreDataStore)store).getBufferCache(), conf, null);
+
+		RpcClient rpcClient = RpcClient.createInstance(CrailConstants.NAMENODE_RPC_TYPE);
+
+		rpcClient.init(conf, null);
+
+		ConcurrentLinkedQueue<InetSocketAddress> namenodeList = CrailUtils.getNameNodeList();
+		ConcurrentLinkedQueue<RpcConnection> connectionList = new ConcurrentLinkedQueue<RpcConnection>();
+		while(!namenodeList.isEmpty()){
+			InetSocketAddress address = namenodeList.poll();
+			RpcConnection connection = rpcClient.connect(address);
+			connectionList.add(connection);
+		}
+		rpcConnection = connectionList.peek();
+		if (connectionList.size() > 1){
+			rpcConnection = new RpcDispatcher(connectionList);
+		}
 	}
 
 	@Override
@@ -184,7 +222,72 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 
 		try {
 			this.relocationOngoing = true;
-			//this.serverGroup.close();
+
+			long start = System.currentTimeMillis();
+
+			// datanode information indicating that the list of occupied blocks should be transferred
+			DataNodeInfo dnInfo = new DataNodeInfo(0,0,-1, address.getAddress().getAddress(), address.getPort());
+
+			// list of all blocks still stored on datanode
+			LinkedList<RelocationBlockInfo> blocks = rpcConnection.getDataNode(dnInfo).get().getBlocks();
+
+			int blocksize = Integer.parseInt(conf.get("crail.blocksize"));
+
+			// transfer all blocks to new datanodes
+			// !!! for now we assume now concurrent data operations !!!
+
+			for(RelocationBlockInfo blockInfo: blocks) {
+
+				boolean isLast = blockInfo.getIsLast() == 1;
+				short index = blockInfo.getIndex();
+				long capacity = blockInfo.getCapacity();
+				long fd = blockInfo.getFd();
+
+				// load block data into local buffer
+				int limit;
+				if(isLast) {
+					limit = (int) (capacity % blocksize);
+					if(limit == 0) {
+						limit = Math.min(blocksize, (int) capacity);
+					}
+				} else {
+					limit = Math.min(blocksize, (int) capacity);
+				}
+
+				// request new block that replaces former block
+				// the index of the block was already communicated by the namenode
+				// this special situation is treadted accordingly in the namenode
+				BlockInfo targetBlock = rpcConnection.getBlock(fd, -1, index, capacity).get().getBlockInfo();
+				DataNodeInfo target = targetBlock.getDnInfo();
+
+				// only perform read and write when capacity is positive
+				if(limit > 0) {
+					
+					ByteBuffer buffer = dataBuffers.get(blockInfo.getLkey()).duplicate();
+					long offset = blockInfo.getAddr() - CrailUtils.getAddress(buffer);
+					buffer.clear().position((int) offset);
+					
+					CrailBuffer crailBuffer = new OffHeapBuffer(buffer);
+
+					StorageEndpoint targetEndpoint = ((CoreDataStore)store).getDatanodeEndpointCache().getDataEndpoint(target);
+
+					buffer.limit(buffer.position() + limit);
+
+					StorageFuture writeFuture = targetEndpoint.write(crailBuffer, targetBlock, 0);
+					writeFuture.get();
+				}
+
+				// finally replace old block with new block in namenode
+				rpcConnection.getBlock(fd, -2, index, capacity).get().getBlockInfo();
+
+			}
+
+			long end = System.currentTimeMillis();
+			long time = end - start;
+			System.out.println("Finished block relocation process after " + time + " ms");
+
+
+
 		} catch(Exception e) {
 			e.printStackTrace();
 		}

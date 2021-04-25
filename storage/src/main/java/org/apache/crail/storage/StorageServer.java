@@ -209,7 +209,7 @@ public interface StorageServer extends Configurable, Runnable {
 			}
 		} else if (status == DataNodeStatus.STATUS_DATANODE_RELOCATION) {
 			server.setRelocationOngoing();
-			server.ackReadyForRelocation(storageRpc);
+			//server.ackReadyForRelocation(storageRpc);
 		}
 	}
 }
