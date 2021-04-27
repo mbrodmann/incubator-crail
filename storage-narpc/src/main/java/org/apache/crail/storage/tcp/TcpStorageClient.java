@@ -19,6 +19,8 @@
 package org.apache.crail.storage.tcp;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 import org.apache.crail.CrailBufferCache;
 import org.apache.crail.CrailStatistics;
@@ -55,6 +57,12 @@ public class TcpStorageClient implements StorageClient {
 
 	@Override
 	public StorageEndpoint createEndpoint(DataNodeInfo info) throws IOException {
+		InetAddress addr = InetAddress.getByAddress(info.getIpAddress());
+		InetSocketAddress sockAddr = new InetSocketAddress(addr, info.getPort());
+		if(CrailUtils.isLocalAddress(addr)) {
+			return new TcpStorageLocalEndpoint(sockAddr);
+		}
+		
 		try {
 			NaRPCEndpoint<TcpStorageRequest, TcpStorageResponse> narpcEndpoint = clientGroup.createEndpoint();
 			TcpStorageEndpoint endpoint = new TcpStorageEndpoint(narpcEndpoint);
