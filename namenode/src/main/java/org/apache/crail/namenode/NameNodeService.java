@@ -471,7 +471,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			return RpcErrors.ERR_DATANODE_NOT_REGISTERED;
 		}
 
-		if(dnInfoNn.isScheduleForRemoval()){
+		if(dnInfoNn.isScheduleForRemoval() && dnInfo.getLocationClass() > 0){
 			// verify that datanode does not store any remaining blocks
 			if(dnInfoNn.safeForRemoval()){
 				// remove datanode from internal datastructures and prepare response
