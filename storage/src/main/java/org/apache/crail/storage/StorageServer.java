@@ -172,7 +172,7 @@ public interface StorageServer extends Configurable, Runnable {
 				long diffCount = newCount - oldCount;
 				blockCount.put(serviceId, newCount);
 				sumCount += diffCount;
-				LOG.info("datanode statistics, freeBlocks " + sumCount);		
+				LOG.info("Registering blocks, freeBlocks " + sumCount);		
 			}
 		}
 		

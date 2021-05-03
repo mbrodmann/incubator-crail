@@ -629,6 +629,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		} else if (token == -2) {
 
 			NameNodeBlockInfo newBlock = this.blockReplacement.get(block);
+			newBlock.setNode(fileInfo);
 			fileInfo.replaceBlock(block, newBlock);
 			blockStore.addBlock(block);
 			this.blockReplacement.remove(block);
