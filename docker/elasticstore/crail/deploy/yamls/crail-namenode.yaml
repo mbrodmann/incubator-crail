@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crail-nameserver
+  namespace: crail
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: crail-nameserver
+  template:
+    metadata:
+      labels:
+        run: crail-nameserver
+    spec:
+      containers:
+      - name: crail-nameserver
+        #image: asq05:5000/crailk8selastic
+        image: crail-elastic
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "100Mi"
+        ports:
+        - name: ns
+          containerPort: 9060
+        volumeMounts:
+        - mountPath: /root/.kube
+          name: kubeconfig-volume
+        env:
+         - name: NAMENODE_HOST
+           value: crail-nameserver
+         - name: INTERFACE
+           value: eth0
+        securityContext:
+           readOnlyRootFilesystem: false
+        command: ['/bin/bash']
+        args: ["-c", "export NAMENODE_HOST=`hostname`; start-crail-docker.sh namenode"]
+      volumes:
+      - name: kubeconfig-volume
+        secret:
+          secretName: kubeconfig-secret
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+#        pocketnodetype: "metadata"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crail-nameserver
+  labels:
+    run: crail-nameserver
+  namespace: crail
+spec:
+  ports:
+    # the port that this service should serve on
+  - port: 9070
+    targetPort: 9070
+  selector:
+    run: crail-nameserver
+

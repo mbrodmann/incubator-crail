@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: myjob-$NUM
+  labels:
+    name: myjob-$NUM
+  namespace: crail
+spec:
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        name: myjob-$NUM
+        app: myjob-$NUM
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: myjob-$NUM
+        image: crail-elastic
+        #image: asqasq/crailk8selastic
+        imagePullPolicy: Never
+        env:
+        - name: NAMENODE_HOST
+          value: crail-nameserver
+        - name: INTERFACE
+          value: eth0
+        securityContext:
+           readOnlyRootFilesystem: false
+        command: ['/bin/bash']
+#        args: ["-c","sleep 1000000"]
+        args: ["-c","start-stats.sh; start-crail-docker.sh datanode"]
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+#        pocketnodetype: "dram"
