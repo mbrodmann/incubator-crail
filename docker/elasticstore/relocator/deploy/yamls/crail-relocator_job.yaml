@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: relocator-$NUM
+  labels:
+    name: relocator-$NUM
+  namespace: crail
+spec:
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        name: relocator-$NUM
+        app: relocator-$NUM
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: relocator-$NUM
+        image: crail-relocator
+        imagePullPolicy: Never
+        workingDir: /crail-S3
+        env:
+        - name: NAMENODE_HOST
+          value: crail-nameserver
+        - name: INTERFACE
+          value: eth0
+        securityContext:
+           readOnlyRootFilesystem: false
+        command: ['/bin/bash']
+        args: ["-c","bash crail-s3.sh run"]
+      nodeSelector:
+        beta.kubernetes.io/os: linux

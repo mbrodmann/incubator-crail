@@ -47,12 +47,14 @@ It is better to run with the default configuration when possible (see below for 
 
 As root, enter the following commands (kubernetesuser is a regular Unix username or your perosnal user id):
 
-    sudo kubeadm init
+    sudo kubeadm init --pod-network-cidr=10.244.0.0/16 
     su kubernetesuser
     mkdir -p $HOME/.kube
     cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     chown $(id -u):$(id -g) $HOME/.kube/config
     exit
+
+It is important to specify the pod-network-cidr as above. Otherwise flannel will have problems initializing - if changes are required also update the flannel configuration yaml file.
 
 ### On the kubernetes slave nodes
 
@@ -80,3 +82,7 @@ Install the flannel network:
 - [Get shell to running Container](https://kubernetes.io/docs/tasks/debug-application-cluster/get-shell-running-container/)
 - [Rebuild Docker Image from specific step](https://stackoverflow.com/questions/35154219/rebuild-docker-image-from-specific-step)
 - [Fix Docker unable to use DNS](https://stackoverflow.com/questions/24991136/docker-build-could-not-resolve-archive-ubuntu-com-apt-get-fails-to-install-a)
+- [Setup flannel](https://github.com/flannel-io/flannel/blob/master/Documentation/kubernetes.md)
+- [Clean CNI and solve related issues](https://github.com/kubernetes/kubernetes/issues/39557)
+- [Schedule pods on master node](https://stackoverflow.com/questions/43147941/allow-scheduling-of-pods-on-kubernetes-master)
+- [Run metrics server](https://stackoverflow.com/questions/52224829/kubernetes-metrics-unable-to-fetch-pod-node-metrics)

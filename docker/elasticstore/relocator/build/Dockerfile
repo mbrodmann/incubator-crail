@@ -12,6 +12,7 @@ ENV PATH=${PATH}:${JAVA_HOME}/bin
 
 # We need to install maven separately since it otherwise pulls in java 10
 RUN echo "Install maven" && \
+
     apt-get install --no-install-recommends -y maven
 
 RUN echo "Crail-$LOG_COMMIT clone & build Crail repo" && \
@@ -19,10 +20,6 @@ RUN echo "Crail-$LOG_COMMIT clone & build Crail repo" && \
     cd /incubator-crail && \
     git checkout retryClient && \
     mvn -DskipTests install
-
-
-# for fast rebuilds only
-COPY marker /dev/null
 
 COPY ./crail-S3 /crail-S3
 
@@ -61,3 +58,6 @@ COPY ./conf/crail-env.sh $CRAIL_HOME/conf
 COPY ./conf/core-site.xml.env $CRAIL_HOME/conf
 COPY ./conf/crail-site.conf $CRAIL_HOME/conf
 COPY ./conf/log4j.properties $CRAIL_HOME/conf
+
+# for fast rebuilds only
+COPY marker /dev/null

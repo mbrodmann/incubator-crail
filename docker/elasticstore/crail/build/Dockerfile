@@ -34,19 +34,6 @@ ENV PATH=${PATH}:${JAVA_HOME}/bin
 RUN echo "Crail-$LOG_COMMIT install maven" && \
     apt-get install --no-install-recommends -y maven
 
-# TODO: Remove these steps once changing to a public repository
-# RUN mkdir /root/.ssh/
-# ADD ./id_rsa /root/.ssh/id_rsa
-# RUN chmod -R 600 /root/.ssh/ && \
-#    touch /root/.ssh/known_hosts && \
-#    ssh-keyscan github.ibm.com >> /root/.ssh/known_hosts
-
-# Clone internal repo and switch to relevant branch
-# RUN echo "Crail-$LOG_COMMIT clone & build Crail repo" && \  
-#    git clone git@github.ibm.com:zrl-cloud-data-platforms/incubator-crail.git && \
-#    cd /incubator-crail && \
-#    git checkout DataNodeAdd && \
-#    mvn -DskipTests package
 RUN echo "Crail-$LOG_COMMIT clone & build Crail repo" && \
     git clone https://github.com/mbrodmann/incubator-crail.git && \
     cd /incubator-crail && \
@@ -65,7 +52,13 @@ ENV PATH=${PATH}:${CRAIL_HOME}/bin
 ENV NAMENODE_HOST=localhost
 ENV NAMENODE_PORT=9070
 ENV INTERFACE=eth0
-ENV DATAPATH=/crail/data
+
+# using /crail/data will use docker's default storage volume which is mounted on disk
+# ENV DATAPATH=/crail/data
+
+# experiment: use hugepages allocated by Kubernetes
+ENV DATAPATH=/hugepages-2Mi
+
 ENV STORAGELIMIT=1073741824
 ENV CACHEPATH=/crail/cache
 ENV CACHELIMIT=0

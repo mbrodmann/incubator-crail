@@ -1,21 +1,21 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: myjob-$NUM
+  name: datanode-tcp-$NUM
   labels:
-    name: myjob-$NUM
+    name: datanode-tcp-$NUM
   namespace: crail
 spec:
   parallelism: 1
   template:
     metadata:
       labels:
-        name: myjob-$NUM
-        app: myjob-$NUM
+        name: datanode-tcp-$NUM
+        app: datanode-tcp-$NUM
     spec:
       restartPolicy: OnFailure
       containers:
-      - name: myjob-$NUM
+      - name: datanode-tcp-$NUM
         image: crail-elastic
         #image: asqasq/crailk8selastic
         imagePullPolicy: Never
@@ -27,8 +27,19 @@ spec:
         securityContext:
            readOnlyRootFilesystem: false
         command: ['/bin/bash']
-#        args: ["-c","sleep 1000000"]
         args: ["-c","start-stats.sh; start-crail-docker.sh datanode"]
+        volumeMounts:
+        - mountPath: /hugepages-2Mi
+          name: hugepage-2mi
+        resources:
+          limits:
+            hugepages-2Mi: 1024Mi
+            memory: 100Mi
+          requests:
+            memory: 100Mi
+      volumes:
+      - name: hugepage-2mi
+        emptyDir:
+          medium: HugePages-2Mi
       nodeSelector:
         beta.kubernetes.io/os: linux
-#        pocketnodetype: "dram"

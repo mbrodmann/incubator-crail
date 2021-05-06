@@ -1,8 +1,9 @@
 #!/bin/bash
 
 
-export NUM=$1
+export END=$1
 
-echo "Starting Datanode-$NUM"
-
-envsubst < yamls/crail-datanode.yaml | kubectl apply -n crail -f -
+for i in $(seq 1 $END); do
+export NUM=$i;
+echo "Starting Datanode-$NUM";
+envsubst < yamls/crail-datanode.yaml | kubectl apply -n crail -f - ; done

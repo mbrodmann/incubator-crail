@@ -1,32 +1,62 @@
-apiVersion: batch/v1
-kind: Job
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: relocator-$NUM
-  labels:
-    name: relocator-$NUM
+  name: crail-relocator
   namespace: crail
 spec:
-  parallelism: 1
+  replicas: 1
+  selector:
+    matchLabels:
+      run: crail-relocator
   template:
     metadata:
       labels:
-        name: relocator-$NUM
-        app: relocator-$NUM
+        run: crail-relocator
     spec:
-      restartPolicy: Never
       containers:
-      - name: relocator-$NUM
+      - name: crail-relocator
         image: crail-relocator
         imagePullPolicy: Never
         workingDir: /crail-S3
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "100Mi"
+        ports:
+        - name: ns
+          containerPort: 8765
+        volumeMounts:
+        - mountPath: /root/.kube
+          name: kubeconfig-volume
         env:
-        - name: NAMENODE_HOST
-          value: crail-nameserver
-        - name: INTERFACE
-          value: eth0
+         - name: NAMENODE_HOST
+           value: crail-nameserver
+         - name: INTERFACE
+           value: eth0
         securityContext:
            readOnlyRootFilesystem: false
         command: ['/bin/bash']
-        args: ["-c","bash crail-s3.sh run"]
+        args: ["-c", "bash crail-s3.sh run"]
+      volumes:
+      - name: kubeconfig-volume
+        secret:
+          secretName: kubeconfig-secret
       nodeSelector:
         beta.kubernetes.io/os: linux
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crail-relocator
+  labels:
+    run: crail-relocator
+  namespace: crail
+spec:
+  ports:
+    # the port that this service should serve on
+  - port: 8765
+    targetPort: 8765
+  selector:
+    run: crail-relocator
+
