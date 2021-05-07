@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datanode
+  labels:
+    name: datanode
+  namespace: crail
+spec:
+  selector:
+    matchLabels:
+      run: datanode
+  template:
+    metadata:
+      labels:
+        name: datanode
+        app: datanode
+        run: datanode
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: datanode
+        image: crail-elastic
+        imagePullPolicy: Never
+        env:
+        - name: NAMENODE_HOST
+          value: crail-nameserver
+        - name: INTERFACE
+          value: eth0
+        securityContext:
+           readOnlyRootFilesystem: false
+        command: ['/bin/bash']
+        args: ["-c","start-stats.sh; start-crail-docker.sh datanode"]
+        volumeMounts:
+        - mountPath: /hugepages-2Mi
+          name: hugepage-2mi
+        resources:
+          limits:
+            cpu: 500m
+            memory: 100Mi
+            hugepages-2Mi: 1024Mi
+          requests:
+            cpu: 200m
+            memory: 100Mi
+      volumes:
+      - name: hugepage-2mi
+        emptyDir:
+          medium: HugePages-2Mi
+      nodeSelector:
+        beta.kubernetes.io/os: linux

@@ -86,3 +86,12 @@ Install the flannel network:
 - [Clean CNI and solve related issues](https://github.com/kubernetes/kubernetes/issues/39557)
 - [Schedule pods on master node](https://stackoverflow.com/questions/43147941/allow-scheduling-of-pods-on-kubernetes-master)
 - [Run metrics server](https://stackoverflow.com/questions/52224829/kubernetes-metrics-unable-to-fetch-pod-node-metrics)
+- [Kubernetes manage hugepages](https://kubernetes.io/docs/tasks/manage-hugepages/scheduling-hugepages/)
+- [Print hugepage info](https://unix.stackexchange.com/questions/167451/how-to-monitor-use-of-huge-pages-per-process)
+- [Solve 'too many requests' error, make sure to place secret on every node](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry)
+- [Deploy Prometheus on Kubernetes](https://betterprogramming.pub/monitor-your-kubernetes-cluster-with-prometheus-and-grafana-1f7d0195e59)
+    - But use:
+    - `helm repo add prometheus-community https://prometheus-community.github.io/helm-charts`
+    - helm install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring
+    - [Cleanup old Prometheus installation](https://github.com/prometheus-community/helm-charts/issues/557)
+- [Port forwarding](https://unix.stackexchange.com/questions/115897/whats-ssh-port-forwarding-and-whats-the-difference-between-ssh-local-and-remot)
