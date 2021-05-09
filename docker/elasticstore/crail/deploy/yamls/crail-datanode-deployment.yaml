@@ -47,3 +47,19 @@ spec:
           medium: HugePages-2Mi
       nodeSelector:
         beta.kubernetes.io/os: linux
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datanode
+  labels:
+    run: datanode
+  namespace: crail
+spec:
+  type: NodePort
+  ports:
+  - port: 50020
+    targetPort: 50020
+  selector:
+    run: datanode

@@ -2,6 +2,8 @@ from os import path
 import subprocess
 import sys
 import time
+import json
+import requests
 
 import yaml
 
@@ -9,16 +11,29 @@ from kubernetes import client, config
 
 def start_datanode_job(name):
 
+    # first check whether there already is a job with the given name
+    config.load_kube_config()
+    api_instance = client.CoreV1Api()
+    res = api_instance.list_namespaced_pod(namespace='crail', label_selector='job-name={}'.format(name))
+
+    k8s_beta = client.BatchV1Api()
+
+    if len(res.items) > 0:
+        job_status = res.items[0].to_dict()['status']['phase']
+        if job_status == 'Succeeded':
+            body = client.V1DeleteOptions(propagation_policy='Background')
+            resp = k8s_beta.delete_namespaced_job(name=name, body=body, namespace="crail", propagation_policy="Foreground")
+        else:
+            print("!!! Error: Tried to start new datanode-job, but previous job is still running !!!")
+
+
     yaml_file = "../yamls/crail-datanode-job-test.yaml"
 
-    config.load_kube_config()
-    
     f = open(yaml_file)
     job = yaml.load(f)
 
     job.get('metadata')['name'] = name
-
-    print(job)
+    job['spec']['template']['metadata']['labels']['name'] = name
 
     k8s_beta = client.BatchV1Api()
     resp = k8s_beta.create_namespaced_job(body=job, namespace="crail")
@@ -26,12 +41,10 @@ def start_datanode_job(name):
 
 def stop_datanode_job(name):
 
+    # (forcefully) terminates running pod of a datanode
+
     yaml_file = "../yamls/crail-datanode-job-test.yaml"
-    parallelism = "1"
-    cmd = ["./update_datanode_yaml.sh", name, parallelism, yaml_file]
-    subprocess.Popen(cmd).wait()
-
-
+    
     config.load_kube_config()
     k8s_beta = client.BatchV1Api()
     
@@ -39,13 +52,54 @@ def stop_datanode_job(name):
     resp = k8s_beta.delete_namespaced_job(name=name, body=body, namespace="crail", propagation_policy="Foreground")
     print("Job deleted. status='%s'" % str(resp.status))
 
+def notify_datanode(name):
+    # this method notifies a datanode running in a pod that it will be removed soon
+
+    config.load_kube_config()
+    api_instance = client.CoreV1Api()
+    res = api_instance.list_namespaced_pod(namespace='crail', label_selector='job-name={}'.format(name))
+    datanode_ip = json.dumps(res.items[0].to_dict()['metadata']['managed_fields'][1]['fields_v1']['f:status']['f:podIPs']).split("\\")[3][1:]
+
+    svc = api_instance.list_namespaced_service(namespace='crail', label_selector='run={}'.format('crail-relocator'))
+
+    if len(svc.items) == 0:
+        print("Error: Could not find relocator service. Make sure it is running on the cluster ... ")
+        return
+
+    relocator_ip = svc.items[0].to_dict()['spec']['cluster_ip']
+
+    print(relocator_ip)
+
+    server = 'http://' + relocator_ip + ':8765/'
+    
+    r = requests.post(server+'remove',data={'ip': datanode_ip, 'port': 50020})
+
+    if r.status_code == 200:
+        print("Removed datanode at " + datanode_ip)
+    else:
+        print("Error occurred when trying to remove datanode at " + datanode_ip)
+
 def main():
     
-    start_datanode_job("tcp-node-1")
-    start_datanode_job("tcp-node-2")
-    time.sleep(60)
-    stop_datanode_job("tcp-node-1")
-    stop_datanode_job("tcp-node-2")
+    #start_datanode_job("tcp-testnode-1")
+    #start_datanode_job("tcp-testnode-2")
+    
+    while True:
+        time.sleep(60)
+        notify_datanode("tcp-testnode-2")
+        time.sleep(60)
+        start_datanode_job("tcp-testnode-2")
+        time.sleep(60)
+        notify_datanode("tcp-testnode-1")
+        time.sleep(60)
+        start_datanode_job("tcp-testnode-1")
+
+    
+    
+    #start_datanode_job("tcp-testnode-17", running_datanodes)
+    #start_datanode_job("tcp-node-2")
+
+    #notify_datanode("tcp-testnode-1")
     
 
 

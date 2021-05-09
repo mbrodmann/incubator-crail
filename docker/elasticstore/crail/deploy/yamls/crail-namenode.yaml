@@ -15,7 +15,6 @@ spec:
     spec:
       containers:
       - name: crail-nameserver
-        #image: asq05:5000/crailk8selastic
         image: crail-elastic
         imagePullPolicy: Never
         resources:
@@ -43,7 +42,6 @@ spec:
           secretName: kubeconfig-secret
       nodeSelector:
         beta.kubernetes.io/os: linux
-#        pocketnodetype: "metadata"
 
 ---
 apiVersion: v1
@@ -54,8 +52,8 @@ metadata:
     run: crail-nameserver
   namespace: crail
 spec:
+  type: NodePort
   ports:
-    # the port that this service should serve on
   - port: 9070
     targetPort: 9070
   selector:

@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-   name: tcp-node-2
+  name: tcp-node-1
   labels:
   parallelism: 1
   namespace: crail

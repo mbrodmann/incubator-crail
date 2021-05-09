@@ -95,3 +95,4 @@ Install the flannel network:
     - helm install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring
     - [Cleanup old Prometheus installation](https://github.com/prometheus-community/helm-charts/issues/557)
 - [Port forwarding](https://unix.stackexchange.com/questions/115897/whats-ssh-port-forwarding-and-whats-the-difference-between-ssh-local-and-remot)
+- [Expose service to external machines using NodePorts](https://kubernetes.io/docs/concepts/services-networking/service/#nodeport)
