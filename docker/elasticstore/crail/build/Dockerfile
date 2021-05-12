@@ -59,7 +59,7 @@ ENV INTERFACE=eth0
 # experiment: use hugepages allocated by Kubernetes
 ENV DATAPATH=/hugepages-2Mi
 
-ENV STORAGELIMIT=1073741824
+ENV STORAGELIMIT=8589934592
 ENV CACHEPATH=/crail/cache
 ENV CACHELIMIT=0
 

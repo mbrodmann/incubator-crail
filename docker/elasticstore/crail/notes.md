@@ -89,6 +89,7 @@ Install the flannel network:
 - [Kubernetes manage hugepages](https://kubernetes.io/docs/tasks/manage-hugepages/scheduling-hugepages/)
 - [Print hugepage info](https://unix.stackexchange.com/questions/167451/how-to-monitor-use-of-huge-pages-per-process)
 - [Solve 'too many requests' error, make sure to place secret on every node](https://kubernetes.io/docs/concepts/containers/images/#using-a-private-registry)
+    - Secrets are stored in `/root/.docker/config.json`
 - [Deploy Prometheus on Kubernetes](https://betterprogramming.pub/monitor-your-kubernetes-cluster-with-prometheus-and-grafana-1f7d0195e59)
     - But use:
     - `helm repo add prometheus-community https://prometheus-community.github.io/helm-charts`

@@ -19,8 +19,8 @@ spec:
         imagePullPolicy: Never
         resources:
           requests:
-            cpu: "100m"
-            memory: "100Mi"
+            cpu: "1000m"
+            memory: "1000Mi"
         ports:
         - name: ns
           containerPort: 9060
@@ -52,7 +52,6 @@ metadata:
     run: crail-nameserver
   namespace: crail
 spec:
-  type: NodePort
   ports:
   - port: 9070
     targetPort: 9070

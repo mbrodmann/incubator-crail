@@ -9,7 +9,7 @@ import yaml
 
 from kubernetes import client, config
 
-def start_datanode_job(name):
+def start_datanode_job(name, node_affinity=None):
 
     # first check whether there already is a job with the given name
     config.load_kube_config()
@@ -34,6 +34,9 @@ def start_datanode_job(name):
 
     job.get('metadata')['name'] = name
     job['spec']['template']['metadata']['labels']['name'] = name
+
+    if node_affinity != None:
+       job['spec']['template']['spec']['nodeSelector']['kubernetes.io/hostname'] = node_affinity
 
     k8s_beta = client.BatchV1Api()
     resp = k8s_beta.create_namespaced_job(body=job, namespace="crail")
@@ -81,10 +84,31 @@ def notify_datanode(name):
 
 def main():
     
-    #start_datanode_job("tcp-testnode-1")
-    #start_datanode_job("tcp-testnode-2")
+    start_datanode_job("tcp-testnode-1", node_affinity='flex01')
+    start_datanode_job("tcp-testnode-2", node_affinity='flex01')
+    start_datanode_job("tcp-testnode-3", node_affinity='flex01')
+    start_datanode_job("tcp-testnode-4", node_affinity='flex01')
+    start_datanode_job("tcp-testnode-5", node_affinity='flex01')
+    start_datanode_job("tcp-testnode-6", node_affinity='flex01')
+
+    #start_datanode_job("tcp-testnode-1", node_affinity='flex02')
+    #start_datanode_job("tcp-testnode-2", node_affinity='flex02')
+    #start_datanode_job("tcp-testnode-3", node_affinity='flex02')
+    #start_datanode_job("tcp-testnode-4", node_affinity='flex02')
+    #start_datanode_job("tcp-testnode-5", node_affinity='flex02')
+    #start_datanode_job("tcp-testnode-6", node_affinity='flex02')
+    #start_datanode_job("tcp-testnode-7", node_affinity='flex02')
+    #start_datanode_job("tcp-testnode-8")
+    #start_datanode_job("tcp-testnode-9")
+    #start_datanode_job("tcp-testnode-10")
+    #start_datanode_job("tcp-testnode-11")
+    #start_datanode_job("tcp-testnode-12")
+    #start_datanode_job("tcp-testnode-13")
+    #start_datanode_job("tcp-testnode-14")
+    #start_datanode_job("tcp-testnode-15")
+    #start_datanode_job("tcp-testnode-16")
     
-    while True:
+    while False:
         time.sleep(60)
         notify_datanode("tcp-testnode-2")
         time.sleep(60)

@@ -17,7 +17,6 @@ spec:
       containers:
       - name: datanode-tcp
         image: crail-elastic
-        #image: asqasq/crailk8selastic
         imagePullPolicy: Never
         env:
         - name: NAMENODE_HOST
@@ -33,7 +32,7 @@ spec:
           name: hugepage-2mi
         resources:
           limits:
-            hugepages-2Mi: 1024Mi
+            hugepages-2Mi: 8192Mi
             memory: 100Mi
           requests:
             memory: 100Mi
