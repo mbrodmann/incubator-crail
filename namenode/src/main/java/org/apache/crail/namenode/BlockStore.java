@@ -301,7 +301,14 @@ class StorageClass {
 			return RpcErrors.ERR_DATANODE_NOT_REGISTERED;
 		} else {
 			toBeRemoved.scheduleForRemoval();
-			return RpcErrors.ERR_OK;
+			
+			if(toBeRemoved.safeForRemoval()) {
+				// indicates that the datanode already is safe for removal
+				return -1;
+			} else {
+				// indicates that datanode was scheduled for removal and still has blocks 
+				return RpcErrors.ERR_OK;	
+			}
 		}
 	}
 
