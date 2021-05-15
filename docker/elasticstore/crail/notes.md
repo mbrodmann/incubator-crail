@@ -65,11 +65,19 @@ Join the cluster, corresponding information is also printed by the cluster maste
 
 
 ### Again on the Kubernetes master node
-Install the flannel network:
 
+Choose one of the following CNIs
+
+#### Install the flannel network:
+ 
     kubectl get nodes
     kubectl apply -f  \
         https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+#### Install calico:
+    kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
+But make sure to modify the yaml file as mentionned here when issues arise: [Link](https://github.com/projectcalico/calico/issues/2561)
 
 
 

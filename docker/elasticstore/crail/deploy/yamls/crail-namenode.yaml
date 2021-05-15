@@ -52,9 +52,9 @@ metadata:
     run: crail-nameserver
   namespace: crail
 spec:
+  clusterIP: 10.109.169.160
   ports:
   - port: 9070
     targetPort: 9070
   selector:
     run: crail-nameserver
-

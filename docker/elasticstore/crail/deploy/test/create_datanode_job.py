@@ -61,7 +61,12 @@ def notify_datanode(name):
     config.load_kube_config()
     api_instance = client.CoreV1Api()
     res = api_instance.list_namespaced_pod(namespace='crail', label_selector='job-name={}'.format(name))
-    datanode_ip = json.dumps(res.items[0].to_dict()['metadata']['managed_fields'][1]['fields_v1']['f:status']['f:podIPs']).split("\\")[3][1:]
+    
+    # format when using flannel
+    # datanode_ip = json.dumps(res.items[0].to_dict()['metadata']['managed_fields'][1]['fields_v1']['f:status']['f:podIPs']).split("\\")[3][1:]
+
+    # format when using calico
+    datanode_ip = json.dumps(res.items[0].to_dict()['metadata']['managed_fields'][2]['fields_v1']['f:status']['f:podIPs']).split("\\")[3][1:]
 
     svc = api_instance.list_namespaced_service(namespace='crail', label_selector='run={}'.format('crail-relocator'))
 
@@ -84,12 +89,32 @@ def notify_datanode(name):
 
 def main():
     
-    start_datanode_job("tcp-testnode-1", node_affinity='flex01')
-    start_datanode_job("tcp-testnode-2", node_affinity='flex01')
-    start_datanode_job("tcp-testnode-3", node_affinity='flex01')
-    start_datanode_job("tcp-testnode-4", node_affinity='flex01')
-    start_datanode_job("tcp-testnode-5", node_affinity='flex01')
-    start_datanode_job("tcp-testnode-6", node_affinity='flex01')
+    #time.sleep(30)
+
+    start_datanode_job("tcp-testnode-1", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-2", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-3", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-4", node_affinity='flex02')
+    
+    time.sleep(60)
+
+    #notify_datanode("tcp-testnode-1")
+    notify_datanode("tcp-testnode-2")
+    notify_datanode("tcp-testnode-3")
+    #notify_datanode("tcp-testnode-4")
+
+    time.sleep(120)
+
+    start_datanode_job("tcp-testnode-2", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-3", node_affinity='flex02')
+    #start_datanode_job("tcp-testnode-4", node_affinity='flex01')
+
+    #start_datanode_job("tcp-testnode-1", node_affinity='flex01')
+    #start_datanode_job("tcp-testnode-2", node_affinity='flex01')
+    #start_datanode_job("tcp-testnode-3", node_affinity='flex01')
+    #start_datanode_job("tcp-testnode-4", node_affinity='flex01')
+    #start_datanode_job("tcp-testnode-5", node_affinity='flex01')
+    #start_datanode_job("tcp-testnode-6", node_affinity='flex01')
 
     #start_datanode_job("tcp-testnode-1", node_affinity='flex02')
     #start_datanode_job("tcp-testnode-2", node_affinity='flex02')
