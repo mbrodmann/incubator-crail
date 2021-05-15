@@ -91,10 +91,10 @@ def main():
     
     #time.sleep(30)
 
-    start_datanode_job("tcp-testnode-1", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-2", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-3", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-4", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-1", node_affinity='flex01')
+    start_datanode_job("tcp-testnode-2", node_affinity='flex01')
+    start_datanode_job("tcp-testnode-3", node_affinity='flex01')
+    start_datanode_job("tcp-testnode-4", node_affinity='flex01')
     
     time.sleep(60)
 
@@ -105,8 +105,8 @@ def main():
 
     time.sleep(120)
 
-    start_datanode_job("tcp-testnode-2", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-3", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-2", node_affinity='flex01')
+    start_datanode_job("tcp-testnode-3", node_affinity='flex01')
     #start_datanode_job("tcp-testnode-4", node_affinity='flex01')
 
     #start_datanode_job("tcp-testnode-1", node_affinity='flex01')

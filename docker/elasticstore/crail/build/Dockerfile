@@ -34,6 +34,9 @@ ENV PATH=${PATH}:${JAVA_HOME}/bin
 RUN echo "Crail-$LOG_COMMIT install maven" && \
     apt-get install --no-install-recommends -y maven
 
+# for fast rebuilds only
+COPY marker /dev/null
+
 RUN echo "Crail-$LOG_COMMIT clone & build Crail repo" && \
     git clone https://github.com/mbrodmann/incubator-crail.git && \
     cd /incubator-crail && \
