@@ -1,29 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: crail-nameserver
+  name: crail-workload
   namespace: crail
 spec:
   replicas: 1
   selector:
     matchLabels:
-      run: crail-nameserver
+      run: crail-workload
   template:
     metadata:
       labels:
-        run: crail-nameserver
+        run: crail-workload
     spec:
       containers:
-      - name: crail-nameserver
-        image: crail-elastic
+      - name: crail-relocator
+        image: crail-relocator
         imagePullPolicy: Never
+        workingDir: /crail-S3
         resources:
           requests:
-            cpu: "1000m"
-            memory: "1000Mi"
+            cpu: "100m"
+            memory: "100Mi"
         ports:
         - name: ns
-          containerPort: 9060
+          containerPort: 8765
         volumeMounts:
         - mountPath: /root/.kube
           name: kubeconfig-volume
@@ -35,7 +36,7 @@ spec:
         securityContext:
            readOnlyRootFilesystem: false
         command: ['/bin/bash']
-        args: ["-c", "export NAMENODE_HOST=`hostname`; collectl --export lexpr | tee collectl.txt & start-crail-docker.sh namenode"]
+        args: ["-c", "collectl --export lexpr | tee collectl.txt & bash crail-s3.sh run > workload.log"]
       volumes:
       - name: kubeconfig-volume
         secret:
@@ -47,14 +48,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: crail-nameserver
+  name: crail-workload
   labels:
-    run: crail-nameserver
+    run: crail-workload
   namespace: crail
 spec:
-  clusterIP: 10.109.169.160
+  clusterIP: 10.109.169.161
   ports:
-  - port: 9070
-    targetPort: 9070
+  - port: 8765
+    targetPort: 8765
   selector:
-    run: crail-nameserver
+    run: crail-workload
+

@@ -26,14 +26,14 @@ spec:
         securityContext:
            readOnlyRootFilesystem: false
         command: ['/bin/bash']
-        args: ["-c","start-stats.sh; start-crail-docker.sh datanode"]
+        args: ["-c","collectl --export lexpr | tee collectl.txt & start-crail-docker.sh datanode"]
         volumeMounts:
         - mountPath: /hugepages-2Mi
           name: hugepage-2mi
         resources:
           limits:
             hugepages-2Mi: 8192Mi
-            memory: 100Mi
+            memory: 1024Mi
           requests:
             memory: 100Mi
       volumes:

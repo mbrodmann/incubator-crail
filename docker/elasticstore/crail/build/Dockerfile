@@ -26,7 +26,8 @@ RUN echo "Crail-$LOG_COMMIT install openjdk8, git and envsubst" && \
     git \
     gettext-base \
     libxml2-utils \
-    openssh-server
+    openssh-server \
+    collectl
 ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 ENV PATH=${PATH}:${JAVA_HOME}/bin
 
