@@ -176,7 +176,27 @@ def simulation():
         print()
         print()
 
+def static():
+    start_datanode_job("tcp-testnode-1-flex02", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-2-flex02", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-3-flex02", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-4-flex02", node_affinity='flex02')
 
+
+def dynamic():
+    start_datanode_job("tcp-testnode-1", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-2", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-3", node_affinity='flex02')
+    start_datanode_job("tcp-testnode-4", node_affinity='flex02')
+
+    time.sleep(30)
+    notify_datanode("tcp-testnode-2")
+    time.sleep(30)
+    notify_datanode("tcp-testnode-3")
+    time.sleep(30)
+    start_datanode_job("tcp-testnode-2", node_affinity='flex02')
+    time.sleep(30)
+    start_datanode_job("tcp-testnode-3", node_affinity='flex02')
 
 
 def batch():
@@ -185,20 +205,19 @@ def batch():
     start_datanode_job("tcp-testnode-3", node_affinity='flex02')
     start_datanode_job("tcp-testnode-4", node_affinity='flex02')
     
-    time.sleep(60)
+    time.sleep(120)
 
     notify_datanode("tcp-testnode-2")
     notify_datanode("tcp-testnode-3")
 
-    time.sleep(120)
+    #time.sleep(120)
 
-    start_datanode_job("tcp-testnode-2", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-3", node_affinity='flex02')
+    #start_datanode_job("tcp-testnode-2", node_affinity='flex01')
+    #start_datanode_job("tcp-testnode-3", node_affinity='flex02')
 
 
 def main():
-    simulation()
-    
+    static()
 
 
 if __name__ == '__main__':
