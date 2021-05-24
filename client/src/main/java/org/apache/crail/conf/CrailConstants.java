@@ -143,6 +143,9 @@ public class CrailConstants {
 	public static final String ELASTICSTORE_LOG_RETRIES_KEY = "crail.elasticstore.log.retries";
 	public static boolean ELASTICSTORE_LOG_RETRIES = false;
 
+	public static final String ELASTICSTORE_TCP_LOCALENDPOINTS_KEY = "crail.elasticstore.tcp.localendpoints";
+	public static boolean ELASTICSTORE_TCP_LOCALENDPOINTS = false;
+
 	public static void updateConstants(CrailConfiguration conf){
 		//general
 		if (conf.get(DIRECTORY_DEPTH_KEY) != null) {
@@ -267,6 +270,9 @@ public class CrailConstants {
 		if(conf.get(ELASTICSTORE_LOG_RETRIES_KEY) != null) {
 			ELASTICSTORE_LOG_RETRIES = Boolean.parseBoolean(conf.get(ELASTICSTORE_LOG_RETRIES_KEY));
 		}
+		if(conf.get(ELASTICSTORE_TCP_LOCALENDPOINTS_KEY) != null) {
+			ELASTICSTORE_TCP_LOCALENDPOINTS = Boolean.parseBoolean(conf.get(ELASTICSTORE_TCP_LOCALENDPOINTS_KEY));
+		}
 	}
 
 	public static void printConf(){
@@ -308,6 +314,7 @@ public class CrailConstants {
 		LOG.info(ELASTICSTORE_LOGGING_KEY + " " + ELASTICSTORE_LOGGING);
 		LOG.info(ELASTICSTORE_RELOCATION_INTERNAL_KEY + " " + ELASTICSTORE_RELOCATION_INTERNAL);
 		LOG.info(ELASTICSTORE_LOG_RETRIES_KEY + " " + ELASTICSTORE_LOG_RETRIES);
+		LOG.info(ELASTICSTORE_TCP_LOCALENDPOINTS_KEY + " " + ELASTICSTORE_TCP_LOCALENDPOINTS);
 	}
 
 	public static void verify() throws IOException {

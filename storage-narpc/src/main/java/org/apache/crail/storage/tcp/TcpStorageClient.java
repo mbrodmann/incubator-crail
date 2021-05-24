@@ -59,7 +59,7 @@ public class TcpStorageClient implements StorageClient {
 	public StorageEndpoint createEndpoint(DataNodeInfo info) throws IOException {
 		InetAddress addr = InetAddress.getByAddress(info.getIpAddress());
 		InetSocketAddress sockAddr = new InetSocketAddress(addr, info.getPort());
-		if(CrailUtils.isLocalAddress(addr)) {
+		if(CrailUtils.isLocalAddress(addr) && CrailConstants.ELASTICSTORE_TCP_LOCALENDPOINTS) {
 			return new TcpStorageLocalEndpoint(sockAddr);
 		}
 		
