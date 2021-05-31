@@ -43,6 +43,8 @@ spec:
           secretName: kubeconfig-secret
       nodeSelector:
         beta.kubernetes.io/os: linux
+        # TODO: please comment this part when allowing for flexible placement
+        kubernetes.io/hostname: flex01
 
 ---
 apiVersion: v1

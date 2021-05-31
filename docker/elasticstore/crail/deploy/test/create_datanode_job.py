@@ -177,8 +177,8 @@ def simulation():
         print()
 
 def static():
-    start_datanode_job("tcp-testnode-1-flex02", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-2-flex02", node_affinity='flex02')
+    #start_datanode_job("tcp-testnode-1-flex02", node_affinity='flex02')
+    #start_datanode_job("tcp-testnode-2-flex02", node_affinity='flex02')
     start_datanode_job("tcp-testnode-3-flex02", node_affinity='flex02')
     start_datanode_job("tcp-testnode-4-flex02", node_affinity='flex02')
 
@@ -205,7 +205,7 @@ def batch():
     start_datanode_job("tcp-testnode-3", node_affinity='flex02')
     start_datanode_job("tcp-testnode-4", node_affinity='flex02')
     
-    time.sleep(120)
+    time.sleep(100)
 
     notify_datanode("tcp-testnode-2")
     notify_datanode("tcp-testnode-3")
@@ -216,8 +216,13 @@ def batch():
     #start_datanode_job("tcp-testnode-3", node_affinity='flex02')
 
 
+def stop():
+    notify_datanode("tcp-testnode-3-flex02")
+    notify_datanode("tcp-testnode-4-flex02")
+
+
 def main():
-    static()
+    stop()
 
 
 if __name__ == '__main__':

@@ -145,6 +145,7 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 	public TcpStorageResponse processRequest(TcpStorageRequest request) {
 		if (request.type() == TcpStorageProtocol.REQ_WRITE){
 			if(this.relocationOngoing) {
+				System.out.println("Rejected write");
 				TcpStorageResponse.WriteResponse writeResponse = new TcpStorageResponse.WriteResponse(-1);
 				return new TcpStorageResponse(writeResponse);
 			}

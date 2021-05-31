@@ -37,12 +37,15 @@ spec:
            readOnlyRootFilesystem: false
         command: ['/bin/bash']
         args: ["-c", "collectl --export lexpr | tee collectl.txt & bash crail-s3.sh run"]
+        #args: ["-c", "bash crail-s3.sh run"]
       volumes:
       - name: kubeconfig-volume
         secret:
           secretName: kubeconfig-secret
       nodeSelector:
         beta.kubernetes.io/os: linux
+        # TODO: please comment this part when allowing for flexible placement
+        kubernetes.io/hostname: flex02
 
 ---
 apiVersion: v1

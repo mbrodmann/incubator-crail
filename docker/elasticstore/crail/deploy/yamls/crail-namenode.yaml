@@ -36,12 +36,15 @@ spec:
            readOnlyRootFilesystem: false
         command: ['/bin/bash']
         args: ["-c", "export NAMENODE_HOST=`hostname`; collectl --export lexpr | tee collectl.txt & start-crail-docker.sh namenode"]
+        #args: ["-c", "export NAMENODE_HOST=`hostname`; start-crail-docker.sh namenode &> out.log"]
       volumes:
       - name: kubeconfig-volume
         secret:
           secretName: kubeconfig-secret
       nodeSelector:
         beta.kubernetes.io/os: linux
+        # TODO: please comment this part when allowing for flexible placement
+        kubernetes.io/hostname: flex02
 
 ---
 apiVersion: v1

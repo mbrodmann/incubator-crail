@@ -27,6 +27,7 @@ spec:
            readOnlyRootFilesystem: false
         command: ['/bin/bash']
         args: ["-c","collectl --export lexpr | tee collectl.txt & start-crail-docker.sh datanode"]
+        #args: ["-c","start-crail-docker.sh datanode &> out.log"]
         volumeMounts:
         - mountPath: /hugepages-2Mi
           name: hugepage-2mi
