@@ -502,12 +502,31 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		if(dnInfo.getLocationClass() == -1) {
 			LinkedList<RelocationBlockInfo> blocks = new LinkedList<>();
 			for(NameNodeBlockInfo block: dnInfoNn.involvedFiles()) {
+
+				// in case a client creates a file while relocation takes place,
+				// it is possible that the AbstractNode was not added yet.
+				// If the client runs correctly this info should be added eventually
 				AbstractNode affectedFile = block.getNode();
-				short isLast = affectedFile.isLast(block) ? (short) 1:0;
-				short index = affectedFile.getIndex(block);
-				long capacity = affectedFile.getCapacity();
-				long fd = affectedFile.getFd();
-				blocks.add(new RelocationBlockInfo(block,isLast, index, capacity, fd));
+				
+				if(affectedFile != null) {
+					short isLast = affectedFile.isLast(block) ? (short) 1:0;
+					short index = affectedFile.getIndex(block);
+					long capacity = affectedFile.getCapacity();
+					long fd = affectedFile.getFd();
+					blocks.add(new RelocationBlockInfo(block,isLast, index, capacity, fd));
+				} else {
+					
+					// !!! experimental !!!
+					// In some situations the relocation process might already start, when the AbstractNode is still missing.
+					// This happens for example when the setFile RPC is late.
+					// However one can still move the entire block (even though the actual capacity of the block is smaller)
+					// Parts of the code that have to be aware of this (afaik)
+					//   - moveBlock in Relocator
+					//   - getBlock in NameNode 
+					System.out.println("Block " + block.getId() + " currently does not store AbstractNode information");
+					blocks.add(new RelocationBlockInfo(block, (short) -1, (short) -1, (long) -1, (long) -1));
+				}
+				
 			}
 
 			response.setBlocks(blocks);
@@ -582,7 +601,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 	
 		//rpc
 		AbstractNode fileInfo = fileTable.get(fd);
-		if (fileInfo == null){
+		if (fileInfo == null && fd > 0){
 			return RpcErrors.ERR_FILE_NOT_OPEN;
 		}
 		
@@ -593,7 +612,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			index = CrailUtils.computeIndex(position);
 		}
 		
-		if (index < 0){
+		if (index < 0 && fd > 0){
 			return RpcErrors.ERR_POSITION_NEGATIV;			
 		}
 		
@@ -618,7 +637,13 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		} else if (token == -1) {
 
 			// allocate fresh block
-			NameNodeBlockInfo newBlock = blockStore.getBlock(fileInfo.getStorageClass(), fileInfo.getLocationClass());
+			NameNodeBlockInfo newBlock;
+			if(fileInfo != null) {
+				newBlock = blockStore.getBlock(fileInfo.getStorageClass(), fileInfo.getLocationClass());	
+			} else {
+				newBlock = 	blockStore.getBlock(0, 0);
+			}
+			
 			if (newBlock == null){
 				return RpcErrors.ERR_NO_FREE_BLOCKS;
 			}
@@ -630,7 +655,11 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 			NameNodeBlockInfo newBlock = this.blockReplacement.get(block);
 			newBlock.setNode(fileInfo);
-			fileInfo.replaceBlock(block, newBlock);
+			
+			if(fileInfo != null) {
+				fileInfo.replaceBlock(block, newBlock);	
+			}
+			
 			blockStore.addBlock(block);
 			this.blockReplacement.remove(block);
 
