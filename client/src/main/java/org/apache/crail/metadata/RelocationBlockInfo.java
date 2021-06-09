@@ -5,26 +5,29 @@ import java.nio.ByteBuffer;
 
 public class RelocationBlockInfo  extends BlockInfo {
 
-    public static int CSIZE = BlockInfo.CSIZE + 20;
+    public static int CSIZE = BlockInfo.CSIZE + 28;
 
     private short isLast;
     private short index;
     private long capacity;
     private long fd;
+    private long blockId;
 
     public RelocationBlockInfo() {
         this.isLast = 0;
         this.index = 0;
         this.capacity = 0;
         this.fd = 0;
+        this.blockId = 0;
     }
 
-    public RelocationBlockInfo(BlockInfo blockInfo, short isLast, short index, long capacity, long fd) {
+    public RelocationBlockInfo(BlockInfo blockInfo, short isLast, short index, long capacity, long fd, long blockId) {
         this.setBlockInfo(blockInfo);
         this.isLast = isLast;
         this.index = index;
         this.capacity = capacity;
         this.fd = fd;
+        this.blockId = blockId;
     }
 
     public int write(ByteBuffer buffer) {
@@ -33,6 +36,7 @@ public class RelocationBlockInfo  extends BlockInfo {
         buffer.putShort(index);
         buffer.putLong(capacity);
         buffer.putLong(fd);
+        buffer.putLong(blockId);
         return CSIZE;
     }
 
@@ -42,6 +46,7 @@ public class RelocationBlockInfo  extends BlockInfo {
         this.index = buffer.getShort();
         this.capacity = buffer.getLong();
         this.fd = buffer.getLong();
+        this.blockId = buffer.getLong();
     }
 
     public short getIsLast() {
@@ -58,5 +63,9 @@ public class RelocationBlockInfo  extends BlockInfo {
 
     public long getFd() {
         return this.fd;
+    }
+
+    public long getBlockId() {
+        return this.blockId;
     }
 }

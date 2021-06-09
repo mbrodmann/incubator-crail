@@ -68,7 +68,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 	private StorageClient datanode = null;
 	private CrailConfiguration conf = CrailConfiguration.createConfigurationFromFile();
 	private BufferCache bufferCache;
-	private ConcurrentHashMap<NameNodeBlockInfo, NameNodeBlockInfo> blockReplacement;
+	private ConcurrentHashMap<Long, NameNodeBlockInfo> blockMap;
+	private ConcurrentHashMap<Long, NameNodeBlockInfo> blockReplacement;
 	
 	public NameNodeService() throws IOException {
 		URI uri = URI.create(CrailConstants.NAMENODE_ADDRESS);
@@ -91,6 +92,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		// WIP: block transfer related objects
 		try {
 			this.bufferCache = BufferCache.createInstance(CrailConstants.CACHE_IMPL);
+			this.blockMap = new ConcurrentHashMap<>();
 			this.blockReplacement = new ConcurrentHashMap<>();
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -513,7 +515,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 					short index = affectedFile.getIndex(block);
 					long capacity = affectedFile.getCapacity();
 					long fd = affectedFile.getFd();
-					blocks.add(new RelocationBlockInfo(block,isLast, index, capacity, fd));
+					blocks.add(new RelocationBlockInfo(block,isLast, index, capacity, fd, block.getId()));
 				} else {
 					
 					// !!! experimental !!!
@@ -524,7 +526,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 					//   - moveBlock in Relocator
 					//   - getBlock in NameNode 
 					System.out.println("Block " + block.getId() + " currently does not store AbstractNode information");
-					blocks.add(new RelocationBlockInfo(block, (short) -1, (short) -1, (long) -1, (long) -1));
+					blocks.add(new RelocationBlockInfo(block, (short) -1, (short) -1, (long) -1, (long) -1, block.getId()));
 				}
 				
 			}
@@ -570,6 +572,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			for (int i = 0; i < realBlocks; i++){
 				NameNodeBlockInfo nnBlock = new NameNodeBlockInfo(region, offset, (int) CrailConstants.BLOCK_SIZE);
 				error = blockStore.addBlock(nnBlock);
+				this.blockMap.put(nnBlock.getId(), nnBlock);
 				offset += CrailConstants.BLOCK_SIZE;
 				
 				if (error != RpcErrors.ERR_OK){
@@ -583,6 +586,9 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 	@Override
 	public short getBlock(RpcRequestMessage.GetBlockReq request, RpcResponseMessage.GetBlockRes response, RpcNameNodeState errorState) throws Exception {
+		
+		// major TODO: all the fields RPCs have to be cleaned up and renamed properly!
+
 		//check protocol
 		if (!RpcProtocol.verifyProtocol(RpcProtocol.CMD_GET_BLOCK, request, response)){
 			return RpcErrors.ERR_PROTOCOL_MISMATCH;
@@ -595,7 +601,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		long capacity = request.getCapacity();
 		
 		//check params
-		if (position < 0){
+		if (position < 0 && fd > 0){
 			return RpcErrors.ERR_POSITION_NEGATIV;
 		}
 	
@@ -615,26 +621,17 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		if (index < 0 && fd > 0){
 			return RpcErrors.ERR_POSITION_NEGATIV;			
 		}
-		
-		NameNodeBlockInfo block = fileInfo.getBlock(index);
-		if (block == null && fileInfo.getToken() == token){
-			block = blockStore.getBlock(fileInfo.getStorageClass(), fileInfo.getLocationClass());
-			if (block == null){
-				return RpcErrors.ERR_NO_FREE_BLOCKS;
+
+		// Special Case 1: Relocator requests new block
+		if (token == -1) {
+
+			NameNodeBlockInfo block;
+			if(fileInfo != null) {
+				block = fileInfo.getBlock(index);
+			} else {
+				long blockID = capacity;
+				block = blockMap.get(blockID);
 			}
-			if (!fileInfo.addBlock(index, block)){
-				return RpcErrors.ERR_ADD_BLOCK_FAILED;
-			}
-			block = fileInfo.getBlock(index);
-			if (block == null){
-				return RpcErrors.ERR_ADD_BLOCK_FAILED;
-			}
-			fileInfo.setCapacity(capacity);
-		} else if (block == null && token > 0){ 
-			return RpcErrors.ERR_TOKEN_MISMATCH;
-		} else if (block == null && token == 0){ 
-			return RpcErrors.ERR_CAPACITY_EXCEEDED;
-		} else if (token == -1) {
 
 			// allocate fresh block
 			NameNodeBlockInfo newBlock;
@@ -649,11 +646,25 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			}
 
 			// return new block and add to mapping
-			this.blockReplacement.put(block, newBlock);
+			this.blockReplacement.put(block.getId(), newBlock);
 			block = newBlock;
+
+			response.setBlockInfo(block);
+			return RpcErrors.ERR_OK;
 		} else if (token == -2) {
 
-			NameNodeBlockInfo newBlock = this.blockReplacement.get(block);
+			NameNodeBlockInfo block;
+
+			if(fileInfo != null) {
+				block = fileInfo.getBlock(index);
+			} else {
+				long blockId = capacity;
+				block = blockMap.get(blockId);
+			}
+
+
+			// Special Case 2: Relocator updates metadata to point to new block
+			NameNodeBlockInfo newBlock = this.blockReplacement.get(block.getId());
 			newBlock.setNode(fileInfo);
 			
 			if(fileInfo != null) {
@@ -661,13 +672,39 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			}
 			
 			blockStore.addBlock(block);
-			this.blockReplacement.remove(block);
+			this.blockReplacement.remove(block.getId());
 
 			block = newBlock;
+
+			response.setBlockInfo(block);
+			return RpcErrors.ERR_OK;
+
+		} else {
+
+			// default case
+			NameNodeBlockInfo block = fileInfo.getBlock(index);
+			if (block == null && fileInfo.getToken() == token){
+				block = blockStore.getBlock(fileInfo.getStorageClass(), fileInfo.getLocationClass());
+				if (block == null){
+					return RpcErrors.ERR_NO_FREE_BLOCKS;
+				}
+				if (!fileInfo.addBlock(index, block)){
+					return RpcErrors.ERR_ADD_BLOCK_FAILED;
+				}
+				block = fileInfo.getBlock(index);
+				if (block == null){
+					return RpcErrors.ERR_ADD_BLOCK_FAILED;
+				}
+				fileInfo.setCapacity(capacity);
+			} else if (block == null && token > 0){ 
+				return RpcErrors.ERR_TOKEN_MISMATCH;
+			} else if (block == null && token == 0){ 
+				return RpcErrors.ERR_CAPACITY_EXCEEDED;
+			}
+
+			response.setBlockInfo(block);
+			return RpcErrors.ERR_OK;
 		}
-		
-		response.setBlockInfo(block);
-		return RpcErrors.ERR_OK;
 	}
 	
 	@Override
