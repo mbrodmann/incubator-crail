@@ -70,6 +70,7 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 						if(dataFuture instanceof StorageFuture) {
 							
 							RetryInfo retryInfo = ((StorageFuture) dataFuture).getRetryInfo();
+							int no_retries = 0;
 
 							do {
 								try {
@@ -79,8 +80,10 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 									CrailBuffer dataBuf = retryInfo.getBuffer();
 									BlockInfo block = retryInfo.retryLookup();
 
+									no_retries++;
+
 									if(CrailConstants.ELASTICSTORE_LOG_RETRIES) {
-										System.out.println("Perform StorageFuture retry for FD" + opDesc.getFd());
+										System.out.println("Perform StorageFuture retry " + no_retries + " for FD" + opDesc.getFd());
 									}
 
 									StorageFuture retryFuture = this.getStream().prepareAndTrigger(opDesc, dataBuf, block);
@@ -91,7 +94,7 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 									getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
 									getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
 									getStream().fs.getDatanodeEndpointCache().removeEndpoint(retryInfo.getBlockInfo().getDnInfo().key());
-									//Thread.sleep(1000);
+									Thread.sleep(10);
 								}
 							} while(true);
 							
@@ -132,6 +135,7 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 						if(dataFuture instanceof StorageFuture) {
 
 							RetryInfo retryInfo = ((StorageFuture) dataFuture).getRetryInfo();
+							int no_retries = 0;
 							
 							do {
 								try {
@@ -141,8 +145,10 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 									CrailBuffer dataBuf = retryInfo.getBuffer();
 									BlockInfo block = retryInfo.retryLookup();
 
+									no_retries++;
+
 									if(CrailConstants.ELASTICSTORE_LOG_RETRIES) {
-										System.out.println("Perform StorageFuture retry for FD" + opDesc.getFd());
+										System.out.println("Perform StorageFuture retry " + no_retries + " for FD" + opDesc.getFd());
 									}
 
 									StorageFuture retryFuture = this.getStream().prepareAndTrigger(opDesc, dataBuf, block);
@@ -153,7 +159,7 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 									getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
 									getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
 									//getStream().fs.getDatanodeEndpointCache().removeEndpoint(retryInfo.getBlockInfo().getDnInfo().key());
-									//Thread.sleep(1000);
+									Thread.sleep(10);
 								}
 							} while(true);
 						} else {
@@ -197,6 +203,7 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 						if(dataFuture instanceof StorageFuture) {
 
 							RetryInfo retryInfo = ((StorageFuture) dataFuture).getRetryInfo();
+							int no_retries = 0;
 							
 							do {
 								try {
@@ -206,8 +213,10 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 									CrailBuffer dataBuf = retryInfo.getBuffer();
 									BlockInfo block = retryInfo.retryLookup();
 
+									no_retries++;
+
 									if(CrailConstants.ELASTICSTORE_LOG_RETRIES) {
-										System.out.println("Perform StorageFuture retry for FD" + opDesc.getFd());
+										System.out.println("Perform StorageFuture retry " + no_retries + " for FD" + opDesc.getFd());
 									}
 
 									StorageFuture retryFuture = this.getStream().prepareAndTrigger(opDesc, dataBuf, block);
@@ -218,7 +227,7 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 									getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
 									getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
 									//getStream().fs.getDatanodeEndpointCache().removeEndpoint(retryInfo.getBlockInfo().getDnInfo().key());
-									//Thread.sleep(1000);
+									Thread.sleep(10);
 								}
 							} while(true);
 						} else {

@@ -233,6 +233,8 @@ public abstract class CoreStream {
 		retryInfo.setBlockInfo(fileInfo.getFd(), fileInfo.getToken(), position, fileInfo.getCapacity());
 		
 		BlockInfo currentBlock = block;
+
+		int no_retries = 0;
 		
 		do {
 			try {
@@ -257,14 +259,18 @@ public abstract class CoreStream {
 				incStats(endpoint.isLocal());
 				return subFuture;
 			} catch(Exception e){
+
+				no_retries++;
 				
 				if(CrailConstants.ELASTICSTORE_LOG_RETRIES) {
-					LOG.info("Perform trigger StorageFuture retry for FD" + opDesc.getFd());
+					e.printStackTrace();
+					LOG.info("Perform trigger StorageFuture retry " + no_retries + " for FD" + opDesc.getFd());
 				}
 				
 				fs.removeBlockCacheEntries(fileInfo.getFd());
 				fs.removeNextBlockCacheEntries(fileInfo.getFd());
 				fs.getDatanodeEndpointCache().removeEndpoint(currentBlock.getDnInfo().key());
+				Thread.sleep(10);
 				retryInfo.retryLookup();
 			}	
 		} while(true);
