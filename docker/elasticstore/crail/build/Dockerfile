@@ -35,8 +35,6 @@ ENV PATH=${PATH}:${JAVA_HOME}/bin
 RUN echo "Crail-$LOG_COMMIT install maven" && \
     apt-get install --no-install-recommends -y maven
 
-# for fast rebuilds only
-COPY marker /dev/null
 
 RUN echo "Crail-$LOG_COMMIT clone & build Crail repo" && \
     git clone https://github.com/mbrodmann/incubator-crail.git && \
@@ -63,7 +61,9 @@ ENV INTERFACE=eth0
 # experiment: use hugepages allocated by Kubernetes
 ENV DATAPATH=/hugepages-2Mi
 
-ENV STORAGELIMIT=8589934592
+# set in crail-datanode-job-test.yaml as variable
+#ENV STORAGELIMIT=10737418240
+
 ENV CACHEPATH=/crail/cache
 ENV CACHELIMIT=0
 
@@ -73,3 +73,6 @@ COPY ./conf/core-site.xml.env $CRAIL_HOME/conf
 COPY ./conf/crail-site.conf $CRAIL_HOME/conf
 
 ENTRYPOINT ["start-crail-docker.sh"]
+
+# for fast rebuilds only
+COPY marker /dev/null

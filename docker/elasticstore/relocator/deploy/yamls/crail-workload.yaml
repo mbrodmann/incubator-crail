@@ -36,7 +36,7 @@ spec:
         securityContext:
            readOnlyRootFilesystem: false
         command: ['/bin/bash']
-        args: ["-c", "collectl --export lexpr | tee collectl.txt & bash crail-s3.sh run"]
+        args: ["-c", "collectl --export lexpr | tee collectl.txt & bash crail-s3.sh run 2> output.log"]
       volumes:
       - name: kubeconfig-volume
         secret:

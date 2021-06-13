@@ -23,6 +23,8 @@ spec:
           value: crail-nameserver
         - name: INTERFACE
           value: eth0
+        - name: STORAGELIMIT
+          value: "42949672960"
         securityContext:
            readOnlyRootFilesystem: false
         command: ['/bin/bash']
@@ -33,7 +35,7 @@ spec:
           name: hugepage-2mi
         resources:
           limits:
-            hugepages-2Mi: 8192Mi
+            hugepages-2Mi: 40960Mi
             memory: 1024Mi
           requests:
             memory: 100Mi

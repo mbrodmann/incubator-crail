@@ -6,6 +6,7 @@ import json
 import requests
 import random
 import yaml
+import importlib
 
 from kubernetes import client, config
 
@@ -95,13 +96,14 @@ def notify_datanode(name):
 
 def simulation():
 
-    machines = ["flex01", "flex02"]
+    #machines = ["flex01", "flex02"]
+    machines = ["flex02"]
     states = {}
 
     for machine in machines:
-        states[machine] = [(0, 'Undefined'), (1, 'Undefined'), (2, 'Undefined'), (3, 'Undefined')]
+        states[machine] = [(0, 'Undefined'), (1, 'Undefined'), (2, 'Undefined'), (3, 'Undefined'), (4, 'Undefined')]
 
-    dc_utilization = 0.2
+    dc_utilization = 0.1
 
     p_stop = dc_utilization
     p_start = 1-dc_utilization
@@ -118,7 +120,7 @@ def simulation():
             state = entry[1]
 
             if state == 'Undefined':
-                start_datanode_job("tcp-testnode-"+machine+"-"+str(slot), node_affinity=machine)
+                start_datanode_job("tcp-datanode-"+machine+"-"+str(slot), node_affinity=machine)
     print()
     print()
 
@@ -134,7 +136,7 @@ def simulation():
             for entry in states[machine]:
 
                 slot = entry[0]
-                current_state = get_datanode_status("tcp-testnode-"+machine+"-"+str(slot))
+                current_state = get_datanode_status("tcp-datanode-"+machine+"-"+str(slot))
                 states[machine][slot] = (slot, current_state)
 
         
@@ -166,64 +168,77 @@ def simulation():
                 # check if running datanode container should be stopped
                 if state == "Running":
                     if rand < p_stop:
-                        notify_datanode("tcp-testnode-"+machine+"-"+str(slot))
+                        notify_datanode("tcp-datanode-"+machine+"-"+str(slot))
 
                 
                 # check if stopped datanode container should be started again
                 if state == "Succeeded":
                     if rand < p_start:
-                        start_datanode_job("tcp-testnode-"+machine+"-"+str(slot), node_affinity=machine)
+                        start_datanode_job("tcp-datanode-"+machine+"-"+str(slot), node_affinity=machine)
         print()
         print()
-
-def static():
-    #start_datanode_job("tcp-testnode-1-flex02", node_affinity='flex02')
-    #start_datanode_job("tcp-testnode-2-flex02", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-3-flex02", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-4-flex02", node_affinity='flex02')
-
 
 def dynamic():
-    start_datanode_job("tcp-testnode-1", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-2", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-3", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-4", node_affinity='flex02')
+    start_datanode_job("tcp-datanode-1", node_affinity='flex02')
+    start_datanode_job("tcp-datanode-2", node_affinity='flex02')
+    start_datanode_job("tcp-datanode-3", node_affinity='flex02')
+    start_datanode_job("tcp-datanode-4", node_affinity='flex02')
 
     time.sleep(30)
-    notify_datanode("tcp-testnode-2")
+    notify_datanode("tcp-datanode-2")
     time.sleep(30)
-    notify_datanode("tcp-testnode-3")
+    notify_datanode("tcp-datanode-3")
     time.sleep(30)
-    start_datanode_job("tcp-testnode-2", node_affinity='flex02')
+    start_datanode_job("tcp-datanode-2", node_affinity='flex02')
     time.sleep(30)
-    start_datanode_job("tcp-testnode-3", node_affinity='flex02')
+    start_datanode_job("tcp-datanode-3", node_affinity='flex02')
 
 
 def batch():
-    start_datanode_job("tcp-testnode-1", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-2", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-3", node_affinity='flex02')
-    start_datanode_job("tcp-testnode-4", node_affinity='flex02')
+    start_datanode_job("tcp-datanode-1", node_affinity='flex02')
+    start_datanode_job("tcp-datanode-2", node_affinity='flex02')
+    start_datanode_job("tcp-datanode-3", node_affinity='flex02')
+    start_datanode_job("tcp-datanode-4", node_affinity='flex02')
     
     time.sleep(100)
 
-    notify_datanode("tcp-testnode-2")
-    notify_datanode("tcp-testnode-3")
+    notify_datanode("tcp-datanode-2")
+    notify_datanode("tcp-datanode-3")
 
     #time.sleep(120)
 
-    #start_datanode_job("tcp-testnode-2", node_affinity='flex01')
-    #start_datanode_job("tcp-testnode-3", node_affinity='flex02')
+    #start_datanode_job("tcp-datanode-2", node_affinity='flex01')
+    #start_datanode_job("tcp-datanode-3", node_affinity='flex02')
+
+
+def static():
+    #start_datanode_job("tcp-datanode-1-flex01", node_affinity='flex01')
+    #start_datanode_job("tcp-datanode-2-flex01", node_affinity='flex01')
+    #start_datanode_job("tcp-datanode-3-flex01", node_affinity='flex01')
+    #start_datanode_job("tcp-datanode-4-flex01", node_affinity='flex01')
+
+    start_datanode_job("tcp-datanode-1-flex02", node_affinity='flex02')
+    #start_datanode_job("tcp-datanode-2-flex02", node_affinity='flex02')
+    #start_datanode_job("tcp-datanode-3-flex02", node_affinity='flex02')
+    #start_datanode_job("tcp-datanode-4-flex02", node_affinity='flex02')
 
 
 def stop():
-    notify_datanode("tcp-testnode-3-flex02")
-    notify_datanode("tcp-testnode-4-flex02")
+    #notify_datanode("tcp-datanode-1-flex01")
+    #notify_datanode("tcp-datanode-2-flex01")
+    #notify_datanode("tcp-datanode-3-flex01")
+    #notify_datanode("tcp-datanode-4-flex01")
+
+    notify_datanode("tcp-datanode-1-flex02")
+    #notify_datanode("tcp-datanode-2-flex02")
+    #notify_datanode("tcp-datanode-3-flex02")
+    #notify_datanode("tcp-datanode-4-flex02")
 
 
 def main():
+    #static()
     stop()
-
+    #simulation()
 
 if __name__ == '__main__':
     main()

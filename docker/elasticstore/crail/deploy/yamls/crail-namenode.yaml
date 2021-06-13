@@ -32,6 +32,8 @@ spec:
            value: crail-nameserver
          - name: INTERFACE
            value: eth0
+         - name: STORAGELIMIT
+           value: "0"
         securityContext:
            readOnlyRootFilesystem: false
         command: ['/bin/bash']
