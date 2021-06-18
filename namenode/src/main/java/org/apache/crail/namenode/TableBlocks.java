@@ -20,12 +20,13 @@ package org.apache.crail.namenode;
 
 import org.apache.crail.CrailNodeType;
 import org.apache.crail.conf.CrailConstants;
+import org.apache.crail.metadata.FileName;
 
 public class TableBlocks extends DirectoryBlocks {
 
-	TableBlocks(long fd, int fileComponent, CrailNodeType type,
-			int storageClass, int locationClass, boolean enumerable) {
-		super(fd, fileComponent, type, storageClass, locationClass, enumerable);
+	TableBlocks(FileName fileName, long fd, int fileComponent, CrailNodeType type,
+				int storageClass, int locationClass, boolean enumerable) {
+		super(fileName, fd, fileComponent, type, storageClass, locationClass, enumerable);
 	}
 
 	@Override

@@ -38,6 +38,14 @@ public class FileName {
 		}
 	}
 	
+	public void copy(FileName that) {
+		this.length = that.length;
+		this.components = new int[CrailConstants.DIRECTORY_DEPTH];
+		for (int i = 0; i < this.components.length; i++){
+			this.components[i] = that.getComponent(i);
+		}
+	}
+	
 	public FileName(String name) throws IOException {
 		this();
 		StringTokenizer tokenizer = new StringTokenizer(name, "/");

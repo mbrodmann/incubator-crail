@@ -239,8 +239,12 @@ public abstract class CoreStream {
 		do {
 			try {
 				
-				if(retryInfo.getBlockInfo() != null) {
+				if(retryInfo.getBlockInfo() != null && retryInfo.isValid()) {
 					currentBlock = retryInfo.getBlockInfo();
+				} else if(!retryInfo.isValid()) {
+					// Done to leave while loop
+					// When unable to fetch updated blockinfo => fail dataoperation
+					return null;
 				}
 
 				// add retryInformation to storageFuture

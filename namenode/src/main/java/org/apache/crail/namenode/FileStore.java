@@ -32,20 +32,20 @@ public class FileStore {
 	
 	public FileStore(Sequencer sequencer) throws IOException { 
 		this.sequencer = sequencer;
-		this.root = createNode(new FileName("/").getFileComponent(), CrailNodeType.DIRECTORY, CrailConstants.STORAGE_ROOTCLASS, 0, false);
+		this.root = createNode(new FileName("/"), new FileName("/").getFileComponent(), CrailNodeType.DIRECTORY, CrailConstants.STORAGE_ROOTCLASS, 0, false);
 	}
 	
-	public AbstractNode createNode(int fileComponent, CrailNodeType type, int storageClass, int locationClass, boolean enumerable) throws IOException {
+	public AbstractNode createNode(FileName fileName, int fileComponent, CrailNodeType type, int storageClass, int locationClass, boolean enumerable) throws IOException {
 		if (type == CrailNodeType.DIRECTORY){
-			return new DirectoryBlocks(sequencer.getNextId(), fileComponent, type, storageClass, locationClass, enumerable);
+			return new DirectoryBlocks(fileName, sequencer.getNextId(), fileComponent, type, storageClass, locationClass, enumerable);
 		} else if (type == CrailNodeType.MULTIFILE){
-			return new MultiFileBlocks(sequencer.getNextId(), fileComponent, type, storageClass, locationClass, enumerable);
+			return new MultiFileBlocks(fileName, sequencer.getNextId(), fileComponent, type, storageClass, locationClass, enumerable);
 		} else if (type == CrailNodeType.TABLE){
-			return new TableBlocks(sequencer.getNextId(), fileComponent, type, storageClass, locationClass, enumerable);
+			return new TableBlocks(fileName, sequencer.getNextId(), fileComponent, type, storageClass, locationClass, enumerable);
 		} else if (type == CrailNodeType.KEYVALUE){
-			return new KeyValueBlocks(sequencer.getNextId(), fileComponent, type, storageClass, locationClass, enumerable);
+			return new KeyValueBlocks(fileName, sequencer.getNextId(), fileComponent, type, storageClass, locationClass, enumerable);
 		} else if (type == CrailNodeType.DATAFILE){
-			return new FileBlocks(sequencer.getNextId(), fileComponent, type, storageClass, locationClass, enumerable);
+			return new FileBlocks(fileName, sequencer.getNextId(), fileComponent, type, storageClass, locationClass, enumerable);
 		} else {
 			throw new IOException("File type unkown: " + type);
 		}

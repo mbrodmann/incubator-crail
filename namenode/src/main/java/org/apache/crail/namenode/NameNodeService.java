@@ -174,7 +174,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 		// proceed here normally when retry==false or file was not created yet
 
-		AbstractNode fileInfo = fileTree.createNode(fileHash.getFileComponent(), type, storageClass, locationClass, enumerable);
+		AbstractNode fileInfo = fileTree.createNode(fileHash, fileHash.getFileComponent(), type, storageClass, locationClass, enumerable);
 		try {
 			AbstractNode oldNode = parentInfo.putChild(fileInfo);
 			if (oldNode != null && oldNode.getFd() != fileInfo.getFd()){
@@ -272,7 +272,14 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			LOG.info("getFile: fd " + fileInfo.getFd() + ", isDir " + fileInfo.getType().isDirectory() + ", token " + fileInfo.getToken() + ", capacity " + fileInfo.getCapacity());
 		}			
 		
-		return RpcErrors.ERR_OK;
+		// Experimental: check if datanode storing block is still running
+		if(fileBlock!=null && !blockStore.getDataNode(fileBlock.getDnInfo()).isOnline()) {
+			LOG.error("Datanode storing block 0 of fd " + fileInfo.getFd() + " is not running anymore");
+			removeFile(request.getFileName());
+			return RpcErrors.ERR_FILE_NOT_FOUND;
+		} else {
+			return RpcErrors.ERR_OK;	
+		}
 	}
 	
 	@Override
@@ -303,6 +310,42 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			LOG.info("setFile: " + fileInfo.toString() + ", close " + close);
 		}
 		
+		return RpcErrors.ERR_OK;
+	}
+
+	// for internal calls of the namenodeservice to remove files from the store
+	public short removeFile(FileName fileHash) throws Exception {
+
+		LogResponse errorState = new LogResponse();
+		
+		//rpc
+		AbstractNode parentInfo = fileTree.retrieveParent(fileHash, errorState);
+		if (errorState.getError() != RpcErrors.ERR_OK){
+			return errorState.getError();
+		}
+		if (parentInfo == null) {
+			return RpcErrors.ERR_CREATE_FILE_FAILED;
+		}
+
+		AbstractNode fileInfo = fileTree.retrieveFile(fileHash, errorState);
+		if (errorState.getError() != RpcErrors.ERR_OK){
+			return errorState.getError();
+		}
+		if (fileInfo == null){
+			return RpcErrors.ERR_GET_FILE_FAILED;
+		}
+		
+		fileInfo = parentInfo.removeChild(fileInfo.getComponent());
+		if (fileInfo == null){
+			return RpcErrors.ERR_GET_FILE_FAILED;
+		}
+
+		appendToDeleteQueue(fileInfo);
+
+		if (CrailConstants.DEBUG){
+			LOG.info("removeFile: filename, fd " + fileInfo.getFd());
+		}
+
 		return RpcErrors.ERR_OK;
 	}
 
@@ -410,7 +453,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		if (srcFile == null){
 			return RpcErrors.ERR_SRC_FILE_NOT_FOUND;
 		}
-		srcFile.rename(dstFileHash.getFileComponent());
+		srcFile.rename(dstFileHash.getFileComponent(), dstFileHash);
 		try {
 			AbstractNode oldNode = dstParent.putChild(srcFile);
 			if (oldNode != null && oldNode.getFd() != srcFile.getFd()){
@@ -703,7 +746,15 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			}
 
 			response.setBlockInfo(block);
-			return RpcErrors.ERR_OK;
+
+			// Experimental: check if datanode storing block is still running
+			if(block!=null && !blockStore.getDataNode(block.getDnInfo()).isOnline()) {
+				LOG.error("Datanode storing block 0 of fd " + fileInfo.getFd() + " is not running anymore");
+				removeFile(fileInfo.getFileName());
+				return RpcErrors.ERR_FILE_NOT_FOUND;
+			} else {
+				return RpcErrors.ERR_OK;
+			}
 		}
 	}
 	

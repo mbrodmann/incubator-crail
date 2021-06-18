@@ -28,14 +28,15 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.crail.CrailNodeType;
 import org.apache.crail.conf.CrailConstants;
 import org.apache.crail.metadata.BlockInfo;
+import org.apache.crail.metadata.FileName;
 
 public class DirectoryBlocks extends AbstractNode {
 	protected AtomicLong dirOffsetCounter;
 	protected ConcurrentHashMap<Integer, AbstractNode> children;	
 	private ConcurrentHashMap<Integer, NameNodeBlockInfo> blocks;
 	
-	DirectoryBlocks(long fd, int fileComponent, CrailNodeType type, int storageClass, int locationClass, boolean enumerable) {
-		super(fd, fileComponent, type, storageClass, locationClass, enumerable);
+	DirectoryBlocks(FileName fileName, long fd, int fileComponent, CrailNodeType type, int storageClass, int locationClass, boolean enumerable) {
+		super(fileName, fd, fileComponent, type, storageClass, locationClass, enumerable);
 		this.children = new ConcurrentHashMap<Integer, AbstractNode>();
 		this.dirOffsetCounter = new AtomicLong(0);
 		this.blocks = new ConcurrentHashMap<Integer, NameNodeBlockInfo>();

@@ -4,6 +4,7 @@ import org.apache.crail.CrailBuffer;
 import org.apache.crail.core.CoreSubOperation;
 import org.apache.crail.metadata.BlockInfo;
 import org.apache.crail.rpc.RpcConnection;
+import org.apache.crail.rpc.RpcErrors;
 import org.apache.crail.rpc.RpcFuture;
 import org.apache.crail.rpc.RpcGetBlock;
 
@@ -25,6 +26,7 @@ public class RetryInfo {
 
     // other fields
     RpcConnection namenodeClientRpc;
+    boolean valid = true;
 
     public RetryInfo(RpcConnection clientRpc) {
         this.namenodeClientRpc = clientRpc;
@@ -64,13 +66,27 @@ public class RetryInfo {
     public BlockInfo retryLookup() {
         try {
             RpcFuture<RpcGetBlock> rpcFuture = namenodeClientRpc.getBlock(fd, token, position, syncedCapacity);
-            BlockInfo block = rpcFuture.get().getBlockInfo();
-            this.updatedBlockInfo = block;
-            return block;
+            
+            if(rpcFuture.get().getError() == RpcErrors.ERR_OK) {
+                BlockInfo block = rpcFuture.get().getBlockInfo();
+                this.updatedBlockInfo = block;
+                this.valid = true;
+                return block;    
+            } else {
+                this.valid = false;
+                System.out.println("Unable to retry Metadata lookup. Got errorcode " + rpcFuture.get().getError());    
+                return null;
+            }
+            
         } catch (Exception e) {
+            this.valid = false;
             System.out.println("Failed retry of dataOp ...");
             e.printStackTrace();
             return null;
         }
+    }
+    
+    public boolean isValid() {
+        return this.valid;
     }
 }

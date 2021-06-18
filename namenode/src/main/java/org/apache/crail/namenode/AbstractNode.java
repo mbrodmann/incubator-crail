@@ -24,12 +24,15 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.crail.CrailNodeType;
 import org.apache.crail.metadata.FileInfo;
+import org.apache.crail.metadata.FileName;
+
 
 public abstract class AbstractNode extends FileInfo implements Delayed {
 	private int fileComponent;
 	private long delay;
 	private int storageClass;
 	private int locationClass;
+	private FileName fileName;
 	
 	//children manipulation
 	//adds or replaces a child, returns previous value or null if there was no mapping
@@ -54,8 +57,15 @@ public abstract class AbstractNode extends FileInfo implements Delayed {
 
 	public abstract void replaceBlock(NameNodeBlockInfo old, NameNodeBlockInfo fresh) throws Exception;
 	
-	public AbstractNode(long fd, int fileComponent, CrailNodeType type, int storageClass, int locationAffinity, boolean enumerable){
+	public AbstractNode(FileName fileName, long fd, int fileComponent, CrailNodeType type, int storageClass, int locationAffinity, boolean enumerable){
 		super(fd, type, enumerable);
+		
+		try {
+			this.fileName = new FileName();
+			this.fileName.copy(fileName);
+		} catch(Exception e) {
+			System.out.println("Error occurred when trying to copy fileName");
+		}
 		
 		this.fileComponent = fileComponent;
 		this.storageClass = storageClass;
@@ -64,8 +74,14 @@ public abstract class AbstractNode extends FileInfo implements Delayed {
 		this.setModificationTime(System.currentTimeMillis());
 	}
 	
-	void rename(int newFileComponent) throws Exception {
+	public FileName getFileName() {
+		return this.fileName;
+	}
+	
+	void rename(int newFileComponent, FileName fileName) throws Exception {
 		this.fileComponent = newFileComponent;
+		this.fileName = new FileName();
+		this.fileName.copy(fileName);
 	}	
 
 	public int getComponent() {
