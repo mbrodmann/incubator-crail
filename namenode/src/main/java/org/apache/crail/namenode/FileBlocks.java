@@ -41,6 +41,11 @@ public class FileBlocks extends AbstractNode {
 		this.readLock = lock.readLock();
 		this.writeLock = lock.writeLock();
 	}
+	
+	@Override
+	public ArrayList<NameNodeBlockInfo> getBlocks() {
+		return this.blocks;
+	}
 
 	@Override
 	public NameNodeBlockInfo getBlock(int index) {

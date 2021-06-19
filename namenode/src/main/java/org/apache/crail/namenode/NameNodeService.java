@@ -272,14 +272,23 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 			LOG.info("getFile: fd " + fileInfo.getFd() + ", isDir " + fileInfo.getType().isDirectory() + ", token " + fileInfo.getToken() + ", capacity " + fileInfo.getCapacity());
 		}			
 		
-		// Experimental: check if datanode storing block is still running
-		if(fileBlock!=null && !blockStore.getDataNode(fileBlock.getDnInfo()).isOnline()) {
-			LOG.error("Datanode storing block 0 of fd " + fileInfo.getFd() + " is not running anymore");
-			removeFile(request.getFileName());
-			return RpcErrors.ERR_FILE_NOT_FOUND;
-		} else {
-			return RpcErrors.ERR_OK;	
+		// Experimental: check if datanode(s) storing block(s) is still running
+		int pos = 0;
+		for(NameNodeBlockInfo block: fileInfo.getBlocks()) {
+			if(!blockStore.getDataNode(block.getDnInfo()).isOnline()) {
+				System.out.println("Datanode " + block.getDnInfo() + " storing block " + pos +" of fd " + fileInfo.getFd() + " is not running anymore");
+			} else {
+				System.out.println("Datanode " + block.getDnInfo() + " storing block " + pos + " of fd " + fileInfo.getFd() + " is running");
+			}
+			if(block!=null && !blockStore.getDataNode(block.getDnInfo()).isOnline()) {
+				System.out.println("Datanode " + block.getDnInfo() + " storing block " + pos +" of fd " + fileInfo.getFd() + " is not running anymore");
+				removeFile(request.getFileName());
+				return RpcErrors.ERR_FILE_NOT_FOUND;
+			}
+			pos++;
 		}
+		
+		return RpcErrors.ERR_OK;
 	}
 	
 	@Override

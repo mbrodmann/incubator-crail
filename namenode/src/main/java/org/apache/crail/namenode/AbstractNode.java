@@ -18,6 +18,7 @@
 
 package org.apache.crail.namenode;
 
+import java.util.ArrayList;
 import java.util.Queue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +57,9 @@ public abstract class AbstractNode extends FileInfo implements Delayed {
 	public abstract void freeBlocks(BlockStore blockStore) throws Exception;
 
 	public abstract void replaceBlock(NameNodeBlockInfo old, NameNodeBlockInfo fresh) throws Exception;
+	
+	// returns a list of all blocks contained in this node
+	public abstract ArrayList<NameNodeBlockInfo> getBlocks() throws Exception;
 	
 	public AbstractNode(FileName fileName, long fd, int fileComponent, CrailNodeType type, int storageClass, int locationAffinity, boolean enumerable){
 		super(fd, type, enumerable);

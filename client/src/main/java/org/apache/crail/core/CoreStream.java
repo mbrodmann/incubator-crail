@@ -273,7 +273,9 @@ public abstract class CoreStream {
 				
 				fs.removeBlockCacheEntries(fileInfo.getFd());
 				fs.removeNextBlockCacheEntries(fileInfo.getFd());
-				fs.getDatanodeEndpointCache().removeEndpoint(currentBlock.getDnInfo().key());
+				if(currentBlock!=null) {
+					fs.getDatanodeEndpointCache().removeEndpoint(currentBlock.getDnInfo().key());	
+				}
 				Thread.sleep(10);
 				retryInfo.retryLookup();
 			}	

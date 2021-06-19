@@ -18,10 +18,7 @@
 
 package org.apache.crail.namenode;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -40,6 +37,14 @@ public class DirectoryBlocks extends AbstractNode {
 		this.children = new ConcurrentHashMap<Integer, AbstractNode>();
 		this.dirOffsetCounter = new AtomicLong(0);
 		this.blocks = new ConcurrentHashMap<Integer, NameNodeBlockInfo>();
+	}
+	
+	public ArrayList<NameNodeBlockInfo> getBlocks() {
+		ArrayList<NameNodeBlockInfo> res = new ArrayList<>();
+		for(NameNodeBlockInfo elem: this.blocks.values()) {
+			res.add(elem);
+		}
+		return res;
 	}
 	
 	public AbstractNode putChild(AbstractNode child) throws Exception {

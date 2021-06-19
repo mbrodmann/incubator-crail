@@ -256,7 +256,8 @@ class StorageClass {
 			return RpcErrors.ERR_OK;
 		}
 
-		current.touch();
+		// commented because this would make datanodes that already left seem like they are still running
+		//current.touch();
 		current.addFreeBlock(block);
 		return RpcErrors.ERR_OK;
 	}

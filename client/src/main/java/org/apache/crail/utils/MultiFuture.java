@@ -156,10 +156,15 @@ public abstract class MultiFuture<R,T> implements Future<T> {
 									((CoreDataOperation) this).aggregate(retryResult);
 									break;
 								} catch(Exception ex) {
-									getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
-									getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
-									//getStream().fs.getDatanodeEndpointCache().removeEndpoint(retryInfo.getBlockInfo().getDnInfo().key());
-									Thread.sleep(10);
+									if(retryInfo.isValid()) {
+										getStream().fs.removeBlockCacheEntries(retryInfo.getFd());
+										getStream().fs.removeNextBlockCacheEntries(retryInfo.getFd());
+										//getStream().fs.getDatanodeEndpointCache().removeEndpoint(retryInfo.getBlockInfo().getDnInfo().key());
+										Thread.sleep(10);	
+									} else {
+										this.status.set(2);
+										break;
+									}
 								}
 							} while(true);
 						} else {
