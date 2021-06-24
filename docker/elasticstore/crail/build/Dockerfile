@@ -58,19 +58,22 @@ ENV INTERFACE=eth0
 # using /crail/data will use docker's default storage volume which is mounted on disk
 # ENV DATAPATH=/crail/data
 
-# experiment: use hugepages allocated by Kubernetes
-ENV DATAPATH=/hugepages-2Mi
+#ENV DATAPATH=/dev/hugepages/data
+ENV DATAPATH=/mnt/tmpfs/data
 
 # set in crail-datanode-job-test.yaml as variable
 #ENV STORAGELIMIT=10737418240
 
-ENV CACHEPATH=/crail/cache
+ENV CACHEPATH=/mnt/tmpfs/cache
 ENV CACHELIMIT=0
 
 COPY ./conf/start-crail-docker.sh $CRAIL_HOME/bin
 COPY ./conf/crail-env.sh $CRAIL_HOME/conf
 COPY ./conf/core-site.xml.env $CRAIL_HOME/conf
 COPY ./conf/crail-site.conf $CRAIL_HOME/conf
+
+# test: set number of hugepages to file that is otherwise read-only
+#RUN echo 512  > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
 
 ENTRYPOINT ["start-crail-docker.sh"]
 

@@ -2,8 +2,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: tcp-node-1
-  labels:
-  parallelism: 1
   namespace: crail
 spec:
   parallelism: 1
@@ -13,35 +11,46 @@ spec:
         name: datanode-tcp
         app: datanode-tcp
     spec:
-      restartPolicy: OnFailure
+      #hostNetwork: true
+      restartPolicy: Never
       containers:
       - name: datanode-tcp
-        image: crail-elastic
-        imagePullPolicy: Never
+        image: gcr.io/spot-storage-elasticity/crail-elastic
+        imagePullPolicy: Always
         env:
         - name: NAMENODE_HOST
           value: crail-nameserver
         - name: INTERFACE
           value: eth0
         - name: STORAGELIMIT
-          value: "42949672960"
+          value: "1073741824"
         securityContext:
            readOnlyRootFilesystem: false
+           privileged: true
+           allowPrivilegeEscalation: true
+           capabilities:
+             add:
+              - SYS_ADMIN
+        volumeMounts:
+        - mountPath: /dev
+          name: dev
+        - mountPath: /sys
+          name: sys
         command: ['/bin/bash']
         args: ["-c","collectl --export lexpr | tee collectl.txt & start-crail-docker.sh datanode"]
         #args: ["-c","start-crail-docker.sh datanode &> out.log"]
-        volumeMounts:
-        - mountPath: /hugepages-2Mi
-          name: hugepage-2mi
         resources:
           limits:
-            hugepages-2Mi: 40960Mi
-            memory: 1024Mi
+            memory: 2Gi
           requests:
-            memory: 100Mi
+            memory: 2Gi
       volumes:
-      - name: hugepage-2mi
-        emptyDir:
-          medium: HugePages-2Mi
+      - name: dev
+        hostPath:
+          path: /dev
+      - name: sys
+        hostPath:
+          path: /sys
       nodeSelector:
+        #kubernetes.io/hostname: gke-cluster-1-datanode-2-af1fbb88-skmx
         beta.kubernetes.io/os: linux

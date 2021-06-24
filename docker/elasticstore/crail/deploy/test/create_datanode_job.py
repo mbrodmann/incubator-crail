@@ -45,7 +45,7 @@ def start_datanode_job(name, node_affinity=None):
     job['spec']['template']['metadata']['labels']['name'] = name
 
     if node_affinity != None:
-       job['spec']['template']['spec']['nodeSelector']['kubernetes.io/hostname'] = node_affinity
+       job['spec']['template']['spec']['nodeSelector']['deployment_role'] = node_affinity
 
     k8s_beta = client.BatchV1Api()
     resp = k8s_beta.create_namespaced_job(body=job, namespace="crail")
@@ -217,10 +217,12 @@ def static():
     #start_datanode_job("tcp-datanode-3-flex01", node_affinity='flex01')
     #start_datanode_job("tcp-datanode-4-flex01", node_affinity='flex01')
 
-    start_datanode_job("tcp-datanode-1-flex02", node_affinity='flex02')
+    #start_datanode_job("tcp-datanode-1-flex02", node_affinity='flex02')
     #start_datanode_job("tcp-datanode-2-flex02", node_affinity='flex02')
     #start_datanode_job("tcp-datanode-3-flex02", node_affinity='flex02')
     #start_datanode_job("tcp-datanode-4-flex02", node_affinity='flex02')
+
+    start_datanode_job("tcp-datanode-1", node_affinity='datanode-1')
 
 
 def stop():
@@ -236,8 +238,8 @@ def stop():
 
 
 def main():
-    #static()
-    stop()
+    static()
+    #stop()
     #simulation()
 
 if __name__ == '__main__':
