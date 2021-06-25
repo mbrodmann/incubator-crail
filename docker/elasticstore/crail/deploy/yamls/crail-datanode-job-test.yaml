@@ -28,14 +28,9 @@ spec:
            readOnlyRootFilesystem: false
            privileged: true
            allowPrivilegeEscalation: true
-           capabilities:
-             add:
-              - SYS_ADMIN
         volumeMounts:
         - mountPath: /dev
           name: dev
-        - mountPath: /sys
-          name: sys
         command: ['/bin/bash']
         args: ["-c","collectl --export lexpr | tee collectl.txt & start-crail-docker.sh datanode"]
         #args: ["-c","start-crail-docker.sh datanode &> out.log"]
@@ -48,9 +43,6 @@ spec:
       - name: dev
         hostPath:
           path: /dev
-      - name: sys
-        hostPath:
-          path: /sys
       nodeSelector:
         #kubernetes.io/hostname: gke-cluster-1-datanode-2-af1fbb88-skmx
         beta.kubernetes.io/os: linux

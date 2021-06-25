@@ -39,7 +39,7 @@ RUN echo "Crail-$LOG_COMMIT install maven" && \
 RUN echo "Crail-$LOG_COMMIT clone & build Crail repo" && \
     git clone https://github.com/mbrodmann/incubator-crail.git && \
     cd /incubator-crail && \
-    git checkout retryClient && \
+    git checkout gke && \
     mvn -DskipTests package
 
 RUN echo "Move crail to /crail" && \

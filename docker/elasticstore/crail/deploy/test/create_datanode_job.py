@@ -224,6 +224,7 @@ def static():
 
     start_datanode_job("tcp-datanode-1", node_affinity='datanode-1')
     start_datanode_job("tcp-datanode-2", node_affinity='datanode-2')
+    #start_datanode_job("tcp-datanode-3", node_affinity='datanode-3')
 
 
 def stop():
