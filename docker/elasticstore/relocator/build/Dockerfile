@@ -7,7 +7,13 @@ RUN echo "Install openjdk8, git and envsubst" && \
     gettext-base \
     libxml2-utils \
     openssh-server \
-    collectl
+    collectl \
+    nano \
+    python3 \
+    python3-pip
+
+RUN pip3 install requests
+
 ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 ENV PATH=${PATH}:${JAVA_HOME}/bin
 

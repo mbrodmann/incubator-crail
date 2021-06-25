@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RELOCATOR_DIR="/home/bro/repos/crail-S3"
+RELOCATOR_DIR="/home/mbrodmann/repos/crail-S3"
 
 if [[ -z $RELOCATOR_DIR ]]; then
 	echo "Make sure to set RELOCATOR_DIR variable to corresponding path"
