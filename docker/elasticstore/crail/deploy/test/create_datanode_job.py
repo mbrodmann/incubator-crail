@@ -75,7 +75,10 @@ def notify_datanode(name):
     # datanode_ip = json.dumps(res.items[0].to_dict()['metadata']['managed_fields'][1]['fields_v1']['f:status']['f:podIPs']).split("\\")[3][1:]
 
     # format when using calico
-    datanode_ip = json.dumps(res.items[0].to_dict()['metadata']['managed_fields'][2]['fields_v1']['f:status']['f:podIPs']).split("\\")[3][1:]
+    # datanode_ip = json.dumps(res.items[0].to_dict()['metadata']['managed_fields'][2]['fields_v1']['f:status']['f:podIPs']).split("\\")[3][1:]
+
+    # format when using gke deployment
+    datanode_ip = json.dumps(res.items[0].to_dict()['metadata']['managed_fields'][1]['fields_v1']['f:status']['f:podIPs']).split("\\")[3][1:]
 
     svc = api_instance.list_namespaced_service(namespace='crail', label_selector='run={}'.format('crail-relocator'))
 
@@ -83,8 +86,14 @@ def notify_datanode(name):
         print("Error: Could not find relocator service. Make sure it is running on the cluster ... ")
         return
 
-    relocator_ip = svc.items[0].to_dict()['spec']['cluster_ip']
-    server = 'http://' + relocator_ip + ':8765/'
+    # format for local kubernetes deployment with cluster ip
+    # relocator_ip = svc.items[0].to_dict()['spec']['cluster_ip']
+    # server = 'http://' + relocator_ip + ':8765/'
+
+    # format for gke deployment using loadbalancer and external ip
+    relocator_ip = svc.items[0].to_dict()['status']['load_balancer']['ingress'][0]['ip']
+    relocator_port = str(svc.items[0].to_dict()['spec']['ports'][0]['port'])
+    server = 'http://' + relocator_ip + ':' + relocator_port + '/'
     
     r = requests.post(server+'remove',data={'ip': datanode_ip, 'port': 50020})
 
@@ -223,7 +232,7 @@ def static():
     #start_datanode_job("tcp-datanode-4-flex02", node_affinity='flex02')
 
     start_datanode_job("tcp-datanode-1", node_affinity='datanode-1')
-    start_datanode_job("tcp-datanode-2", node_affinity='datanode-2')
+    #start_datanode_job("tcp-datanode-2", node_affinity='datanode-2')
     #start_datanode_job("tcp-datanode-3", node_affinity='datanode-3')
 
 
@@ -233,15 +242,17 @@ def stop():
     #notify_datanode("tcp-datanode-3-flex01")
     #notify_datanode("tcp-datanode-4-flex01")
 
-    notify_datanode("tcp-datanode-1-flex02")
+    #notify_datanode("tcp-datanode-1-flex02")
     #notify_datanode("tcp-datanode-2-flex02")
     #notify_datanode("tcp-datanode-3-flex02")
     #notify_datanode("tcp-datanode-4-flex02")
 
+    notify_datanode("tcp-datanode-1")
+
 
 def main():
-    static()
-    #stop()
+    #static()
+    stop()
     #simulation()
 
 if __name__ == '__main__':

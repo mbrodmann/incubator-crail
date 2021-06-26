@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: crail-relocator
-        image: crail-relocator
-        imagePullPolicy: Never
+        image: gcr.io/spot-storage-elasticity/crail-relocator
+        imagePullPolicy: Always
         workingDir: /crail-S3
         resources:
           requests:
@@ -45,7 +45,8 @@ spec:
       nodeSelector:
         beta.kubernetes.io/os: linux
         # TODO: please comment this part when allowing for flexible placement
-        kubernetes.io/hostname: flex02
+        #kubernetes.io/hostname: flex02
+        deployment_role: relocator-1
 
 ---
 apiVersion: v1
@@ -56,9 +57,10 @@ metadata:
     run: crail-relocator
   namespace: crail
 spec:
+  type: LoadBalancer
   ports:
-    # the port that this service should serve on
-  - port: 8765
+  - protocol: TCP
+    port: 50000
     targetPort: 8765
   selector:
     run: crail-relocator
