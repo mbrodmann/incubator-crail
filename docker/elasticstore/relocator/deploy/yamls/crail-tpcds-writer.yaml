@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crail-tpcds-writer
+  namespace: crail
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: crail-tpcds-writer
+  template:
+    metadata:
+      labels:
+        run: crail-tpcds-writer
+    spec:
+      containers:
+      - name: crail-relocator
+        image: gcr.io/spot-storage-elasticity/crail-relocator
+        imagePullPolicy: Always
+        workingDir: /crail-S3
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "100Mi"
+        ports:
+        - name: ns
+          containerPort: 8765
+        volumeMounts:
+        - mountPath: /root/.kube
+          name: kubeconfig-volume
+        - mountPath: /key
+          name: config
+        env:
+         - name: NAMENODE_HOST
+           value: crail-nameserver
+         - name: INTERFACE
+           value: eth0
+        securityContext:
+           readOnlyRootFilesystem: false
+        command: ['/bin/bash']
+        args: ["-c", "collectl --export lexpr | tee collectl.txt & bash crail-s3.sh run 2> output.log"]
+      volumes:
+      - name: kubeconfig-volume
+        secret:
+          secretName: kubeconfig-secret
+      - name: config
+        configMap:
+          name: key
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+        # TODO: please comment this part when allowing for flexible placement
+        # kubernetes.io/hostname: flex01

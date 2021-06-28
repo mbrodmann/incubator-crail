@@ -251,8 +251,8 @@ def stop():
 
 
 def main():
-    #static()
-    stop()
+    static()
+    #stop()
     #simulation()
 
 if __name__ == '__main__':

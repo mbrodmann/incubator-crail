@@ -10,7 +10,10 @@ RUN echo "Install openjdk8, git and envsubst" && \
     collectl \
     nano \
     python3 \
-    python3-pip
+    python3-pip \
+    curl \
+    gnupg2 \
+    fuse
 
 RUN pip3 install requests
 
@@ -35,6 +38,14 @@ COPY ./crail-S3 /crail-S3
 
 RUN cd /crail-S3 && \
     bash crail-s3.sh build
+
+# include gcsfuse
+RUN export GCSFUSE_REPO=gcsfuse-focal && \
+echo "deb http://packages.cloud.google.com/apt $GCSFUSE_REPO main" | tee /etc/apt/sources.list.d/gcsfuse.list && \
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+
+RUN apt-get update && \
+apt-get install --no-install-recommends -y gcsfuse
 
 
 #RUN echo "Clone & build Crail repo" && \
