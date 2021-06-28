@@ -54,10 +54,10 @@ apt-get install --no-install-recommends -y gcsfuse
 #    git checkout retryClient && \
 #    mvn -DskipTests package
 
-#RUN echo "Move crail to /crail" && \
-#    rm -rf /crail && \
-#    v=`xmllint --xpath "string(/*[local-name()='project']/*[local-name()='version'])" /incubator-crail/pom.xml` && \
-#    mv /incubator-crail/assembly/target/apache-crail-${v}-bin/apache-crail-${v} /crail
+RUN echo "Move crail to /crail" && \
+    rm -rf /crail && \
+    v=`xmllint --xpath "string(/*[local-name()='project']/*[local-name()='version'])" /incubator-crail/pom.xml` && \
+    mv /incubator-crail/assembly/target/apache-crail-${v}-bin/apache-crail-${v} /crail
 
 ENV CRAIL_HOME /crail
 ENV PATH=${PATH}:${CRAIL_HOME}/bin
@@ -76,6 +76,6 @@ RUN mkdir -p $CRAIL_HOME/conf
 
 COPY ./conf/start-crail-docker.sh $CRAIL_HOME/bin
 COPY ./conf/crail-env.sh $CRAIL_HOME/conf
-COPY ./conf/core-site.xml.env $CRAIL_HOME/conf
+COPY ./conf/core-site.xml $CRAIL_HOME/conf
 COPY ./conf/crail-site.conf $CRAIL_HOME/conf
 COPY ./conf/log4j.properties $CRAIL_HOME/conf
