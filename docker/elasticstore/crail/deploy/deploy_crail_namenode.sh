@@ -20,5 +20,3 @@ data:
 
 
 kubectl apply -n crail -f ./yamls/crail-namenode.yaml
-sleep 15;
-kubectl -n crail get svc crail-nameserver

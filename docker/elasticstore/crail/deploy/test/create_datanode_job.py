@@ -231,8 +231,8 @@ def static():
     #start_datanode_job("tcp-datanode-3-flex02", node_affinity='flex02')
     #start_datanode_job("tcp-datanode-4-flex02", node_affinity='flex02')
 
-    start_datanode_job("tcp-datanode-1", node_affinity='datanode-1')
-    #start_datanode_job("tcp-datanode-2", node_affinity='datanode-2')
+    #start_datanode_job("tcp-datanode-1", node_affinity='datanode-1')
+    start_datanode_job("tcp-datanode-2", node_affinity='datanode-2')
     #start_datanode_job("tcp-datanode-3", node_affinity='datanode-3')
 
 
@@ -247,12 +247,13 @@ def stop():
     #notify_datanode("tcp-datanode-3-flex02")
     #notify_datanode("tcp-datanode-4-flex02")
 
-    notify_datanode("tcp-datanode-1")
+    #notify_datanode("tcp-datanode-1")
+    notify_datanode("tcp-datanode-2")
 
 
 def main():
-    static()
-    #stop()
+    #static()
+    stop()
     #simulation()
 
 if __name__ == '__main__':

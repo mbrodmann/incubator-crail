@@ -40,7 +40,7 @@ if [ $@ = "datanode" ]; then
     mkdir -p /mnt/tmpfs
     chmod a+rw /mnt/tmpfs
 
-    mount -t tmpfs -o size=2G none /mnt/tmpfs
+    mount -t tmpfs -o size=${STORAGELIMIT_IN_G}G none /mnt/tmpfs
 
     mkdir -p /mnt/tmpfs/cache
     mkdir -p /mnt/tmpfs/data

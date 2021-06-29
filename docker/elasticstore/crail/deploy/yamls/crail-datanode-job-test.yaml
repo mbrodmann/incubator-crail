@@ -24,6 +24,8 @@ spec:
           value: eth0
         - name: STORAGELIMIT
           value: "12884901888"
+        - name: STORAGELIMIT_IN_G
+          value: "12"
         securityContext:
            readOnlyRootFilesystem: false
            privileged: true
@@ -36,7 +38,6 @@ spec:
         #args: ["-c","start-crail-docker.sh datanode &> out.log"]
         resources:
           limits:
-            memory: 2Gi
           requests:
             memory: 2Gi
       volumes:

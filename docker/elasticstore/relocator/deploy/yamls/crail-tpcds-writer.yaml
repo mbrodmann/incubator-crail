@@ -1,18 +1,15 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: crail-tpcds-writer
   namespace: crail
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      run: crail-tpcds-writer
   template:
     metadata:
       labels:
         run: crail-tpcds-writer
     spec:
+      restartPolicy: Never
       containers:
       - name: crail-relocator
         image: gcr.io/spot-storage-elasticity/crail-relocator
@@ -40,7 +37,7 @@ spec:
            privileged: true
            allowPrivilegeEscalation: true
         command: ['/bin/bash']
-        args: ["-c", "bash run.sh 1G"]
+        args: ["-c", "bash run.sh 10G2"]
       volumes:
       - name: kubeconfig-volume
         secret:
