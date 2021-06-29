@@ -1,6 +1,7 @@
 from os import path
 import subprocess
 import sys
+from sys import argv
 import time
 import json
 import requests
@@ -232,8 +233,10 @@ def static():
     #start_datanode_job("tcp-datanode-4-flex02", node_affinity='flex02')
 
     #start_datanode_job("tcp-datanode-1", node_affinity='datanode-1')
-    start_datanode_job("tcp-datanode-2", node_affinity='datanode-2')
+    #start_datanode_job("tcp-datanode-2", node_affinity='datanode-2')
     #start_datanode_job("tcp-datanode-3", node_affinity='datanode-3')
+    #start_datanode_job("tcp-datanode-4", node_affinity='datanode-4')
+    start_datanode_job("tcp-datanode-5", node_affinity='datanode-5')
 
 
 def stop():
@@ -248,13 +251,23 @@ def stop():
     #notify_datanode("tcp-datanode-4-flex02")
 
     #notify_datanode("tcp-datanode-1")
-    notify_datanode("tcp-datanode-2")
+    notify_datanode("tcp-datanode-5")
 
 
 def main():
-    #static()
-    stop()
-    #simulation()
+
+    arg = argv[1]
+
+    print(arg) 
+
+    if arg == 'start':
+        static()
+
+    if arg == 'stop':
+        stop()
+
+    if arg == 'simulation':
+        simulation()
 
 if __name__ == '__main__':
     main()

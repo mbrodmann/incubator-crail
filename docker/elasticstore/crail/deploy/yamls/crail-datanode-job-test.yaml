@@ -23,9 +23,9 @@ spec:
         - name: INTERFACE
           value: eth0
         - name: STORAGELIMIT
-          value: "12884901888"
+          value: "21474836480"
         - name: STORAGELIMIT_IN_G
-          value: "12"
+          value: "20"
         securityContext:
            readOnlyRootFilesystem: false
            privileged: true
