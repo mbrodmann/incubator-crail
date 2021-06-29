@@ -17,7 +17,7 @@ spec:
       - name: crail-relocator
         image: gcr.io/spot-storage-elasticity/crail-relocator
         imagePullPolicy: Always
-        workingDir: /crail-S3
+        workingDir: /crail
         resources:
           requests:
             cpu: "100m"
@@ -28,8 +28,8 @@ spec:
         volumeMounts:
         - mountPath: /root/.kube
           name: kubeconfig-volume
-        - mountPath: /key
-          name: config
+        #- mountPath: /key
+        #  name: config
         env:
          - name: NAMENODE_HOST
            value: crail-nameserver
@@ -40,14 +40,14 @@ spec:
            privileged: true
            allowPrivilegeEscalation: true
         command: ['/bin/bash']
-        args: ["-c", "collectl --export lexpr | tee collectl.txt & bash crail-s3.sh run 2> output.log"]
+        args: ["-c", "bash run.sh 1G"]
       volumes:
       - name: kubeconfig-volume
         secret:
           secretName: kubeconfig-secret
-      - name: config
-        configMap:
-          name: key
+      #- name: config
+      #  configMap:
+      #    name: key
       nodeSelector:
         beta.kubernetes.io/os: linux
         # TODO: please comment this part when allowing for flexible placement

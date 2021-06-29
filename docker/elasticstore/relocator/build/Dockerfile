@@ -25,9 +25,6 @@ RUN echo "Install maven" && \
 
     apt-get install --no-install-recommends -y maven
 
-# for fast rebuilds only
-COPY marker /dev/null
-
 RUN echo "Crail-$LOG_COMMIT clone & build Crail repo" && \
     git clone https://github.com/mbrodmann/incubator-crail.git && \
     cd /incubator-crail && \
@@ -79,3 +76,8 @@ COPY ./conf/crail-env.sh $CRAIL_HOME/conf
 COPY ./conf/core-site.xml $CRAIL_HOME/conf
 COPY ./conf/crail-site.conf $CRAIL_HOME/conf
 COPY ./conf/log4j.properties $CRAIL_HOME/conf
+
+COPY ./tpcds-writer/run.sh $CRAIL_HOME
+
+# for fast rebuilds only
+COPY marker /dev/null
