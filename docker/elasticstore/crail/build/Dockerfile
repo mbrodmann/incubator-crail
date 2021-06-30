@@ -27,7 +27,14 @@ RUN echo "Crail-$LOG_COMMIT install openjdk8, git and envsubst" && \
     gettext-base \
     libxml2-utils \
     openssh-server \
-    collectl
+    collectl \
+    python3 \
+    python3-pip \
+    nano \
+    curl
+
+RUN pip3 install requests
+
 ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 ENV PATH=${PATH}:${JAVA_HOME}/bin
 
@@ -68,6 +75,8 @@ ENV CACHEPATH=/mnt/tmpfs/cache
 ENV CACHELIMIT=0
 
 COPY ./conf/start-crail-docker.sh $CRAIL_HOME/bin
+COPY ./conf/stop-crail-docker.py $CRAIL_HOME/bin
+COPY ./conf/stop-crail-java.sh $CRAIL_HOME/bin
 COPY ./conf/crail-env.sh $CRAIL_HOME/conf
 COPY ./conf/core-site.xml.env $CRAIL_HOME/conf
 COPY ./conf/crail-site.conf $CRAIL_HOME/conf

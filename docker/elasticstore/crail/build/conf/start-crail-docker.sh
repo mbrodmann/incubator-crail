@@ -37,6 +37,11 @@ envsubst < $CRAIL_HOME/conf/core-site.xml.env > $CRAIL_HOME/conf/core-site.xml
 #fi
 
 if [ $@ = "datanode" ]; then
+    ADDR="http://${CRAIL_RELOCATOR_PORT##*/}/log"
+    DATA="Starting `hostname` at `date`"
+
+    curl --request POST --data "$DATA" $ADDR
+
     mkdir -p /mnt/tmpfs
     chmod a+rw /mnt/tmpfs
 

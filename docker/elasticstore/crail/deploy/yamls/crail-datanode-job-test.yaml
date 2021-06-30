@@ -11,12 +11,15 @@ spec:
         name: datanode-tcp
         app: datanode-tcp
     spec:
-      #hostNetwork: true
       restartPolicy: Never
       containers:
       - name: datanode-tcp
         image: gcr.io/spot-storage-elasticity/crail-elastic
         imagePullPolicy: Always
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh","-c","python3 /crail/bin/stop-crail-docker.py; bash /crail/bin/stop-crail-java.sh"]
         env:
         - name: NAMENODE_HOST
           value: crail-nameserver
@@ -26,6 +29,10 @@ spec:
           value: "21474836480"
         - name: STORAGELIMIT_IN_G
           value: "20"
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         securityContext:
            readOnlyRootFilesystem: false
            privileged: true
@@ -34,7 +41,7 @@ spec:
         - mountPath: /dev
           name: dev
         command: ['/bin/bash']
-        args: ["-c","collectl --export lexpr | tee collectl.txt & start-crail-docker.sh datanode"]
+        args: ["-c","collectl --export lexpr | tee collectl.txt & start-crail-docker.sh datanode; echo Done"]
         #args: ["-c","start-crail-docker.sh datanode &> out.log"]
         resources:
           limits:

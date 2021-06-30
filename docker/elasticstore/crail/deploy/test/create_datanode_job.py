@@ -236,7 +236,12 @@ def static():
     #start_datanode_job("tcp-datanode-2", node_affinity='datanode-2')
     #start_datanode_job("tcp-datanode-3", node_affinity='datanode-3')
     #start_datanode_job("tcp-datanode-4", node_affinity='datanode-4')
-    start_datanode_job("tcp-datanode-5", node_affinity='datanode-5')
+    #start_datanode_job("tcp-datanode-5", node_affinity='datanode-5')
+
+    start_datanode_job("spot-datanode-1", node_affinity='spot-datanode-1')
+    start_datanode_job("spot-datanode-2", node_affinity='spot-datanode-2')
+    start_datanode_job("spot-datanode-3", node_affinity='spot-datanode-3')
+    start_datanode_job("spot-datanode-4", node_affinity='spot-datanode-4')
 
 
 def stop():
@@ -251,7 +256,7 @@ def stop():
     #notify_datanode("tcp-datanode-4-flex02")
 
     #notify_datanode("tcp-datanode-1")
-    notify_datanode("tcp-datanode-5")
+    notify_datanode("tcp-datanode-2")
 
 
 def main():
