@@ -33,6 +33,9 @@ RUN echo "Crail-$LOG_COMMIT install openjdk8, git and envsubst" && \
     nano \
     curl
 
+# This configures collectl for larger bandwidths to not reject data
+RUN echo "DefNetSpeed=-1" >> /etc/collectl.conf
+
 RUN pip3 install requests
 
 ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64

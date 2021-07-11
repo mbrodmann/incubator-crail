@@ -26,9 +26,9 @@ spec:
         - name: INTERFACE
           value: eth0
         - name: STORAGELIMIT
-          value: "21474836480"
+          value: "53687091200"
         - name: STORAGELIMIT_IN_G
-          value: "20"
+          value: "50"
         - name: POD_IP
           valueFrom:
             fieldRef:
