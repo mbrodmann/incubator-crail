@@ -37,6 +37,7 @@ RUN echo "Crail-$LOG_COMMIT install openjdk8, git and envsubst" && \
 RUN echo "DefNetSpeed=-1" >> /etc/collectl.conf
 
 RUN pip3 install requests
+RUN pip3 install kubernetes
 
 ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 ENV PATH=${PATH}:${JAVA_HOME}/bin
@@ -45,6 +46,7 @@ ENV PATH=${PATH}:${JAVA_HOME}/bin
 RUN echo "Crail-$LOG_COMMIT install maven" && \
     apt-get install --no-install-recommends -y maven
 
+COPY marker /dev/null
 
 RUN echo "Crail-$LOG_COMMIT clone & build Crail repo" && \
     git clone https://github.com/mbrodmann/incubator-crail.git && \

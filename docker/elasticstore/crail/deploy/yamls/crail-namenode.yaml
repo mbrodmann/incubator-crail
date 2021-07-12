@@ -37,7 +37,7 @@ spec:
         securityContext:
            readOnlyRootFilesystem: false
         command: ['/bin/bash']
-        args: ["-c", "export NAMENODE_HOST=`hostname`; collectl --export lexpr | tee collectl.txt & start-crail-docker.sh namenode"]
+        args: ["-c", "export NAMENODE_HOST=`hostname`; collectl --export lexpr | tee collectl.txt & start-crail-docker.sh namenode >> output.log 2>&1"]
         #args: ["-c", "export NAMENODE_HOST=`hostname`; start-crail-docker.sh namenode &> out.log"]
       volumes:
       - name: kubeconfig-volume
