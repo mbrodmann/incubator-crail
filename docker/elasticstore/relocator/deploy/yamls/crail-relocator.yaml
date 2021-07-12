@@ -58,6 +58,7 @@ metadata:
   namespace: crail
 spec:
   type: LoadBalancer
+  clusterIP: 10.8.0.200
   ports:
   - protocol: TCP
     port: 50000

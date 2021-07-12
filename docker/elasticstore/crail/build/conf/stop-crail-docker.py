@@ -2,7 +2,7 @@ import requests
 import os
 import socket
 
-from kubernetes import client,config
+#from kubernetes import client,config
 
 hostname = socket.gethostname()
 
@@ -10,10 +10,13 @@ hostname = socket.gethostname()
 # relocator_port = os.environ['CRAIL_RELOCATOR_PORT']
 # relocator_address = relocator_port.split("//")[1]
 
-config.load_kube_config()
-api_instance = client.CoreV1Api()
-svc = api_instance.list_namespaced_service(namespace='crail', label_selector='run={}'.format('crail-relocator'))
-relocator_address = svc.items[0].to_dict()['spec']['cluster_ip']+':50000'
+#config.load_kube_config()
+#api_instance = client.CoreV1Api()
+#svc = api_instance.list_namespaced_service(namespace='crail', label_selector='run={}'.format('crail-relocator'))
+#relocator_address = svc.items[0].to_dict()['spec']['cluster_ip']+':50000'
+
+# probably easiest to just use static cluster-ip address
+relocator_address = '10.8.0.200:50000'
 
 server = 'http://' + relocator_address + '/'
 

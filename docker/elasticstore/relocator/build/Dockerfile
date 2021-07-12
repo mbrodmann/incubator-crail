@@ -28,6 +28,8 @@ RUN echo "Install maven" && \
 
     apt-get install --no-install-recommends -y maven
 
+COPY marker /dev/null
+
 RUN echo "Crail-$LOG_COMMIT clone & build Crail repo" && \
     git clone https://github.com/mbrodmann/incubator-crail.git && \
     cd /incubator-crail && \
